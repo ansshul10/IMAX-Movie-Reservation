@@ -79,7 +79,7 @@ const BookingForm = ({ movieTitle }) => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/book-ticket", {
+      const response = await axios.post("https://imax-movie-reservation.onrender.com/api/book-ticket", {
         user: userInfo._id,
         name: userInfo.name,
         email: bookingEmail, // Save this email ONLY in the booking database
