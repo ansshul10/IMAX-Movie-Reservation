@@ -62,7 +62,7 @@ const Navbar = () => {
           <div className="relative">
             {/* Profile Image with fallback */}
             <img
-              src={`http://localhost:5000${user.profileImage || '/uploads/default-profile.png'}`}
+              src={`https://imax-movie-reservation.onrender.com${user.profileImage || '/uploads/default-profile.png'}`}
               alt="Profile"
               className="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-white"
               onClick={handleProfileClick}
