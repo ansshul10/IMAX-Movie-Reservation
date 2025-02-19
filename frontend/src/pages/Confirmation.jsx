@@ -23,7 +23,7 @@ const Confirmation = () => {
 
     const fetchBookingDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/get-booking/${bookingId}`);
+        const response = await axios.get(`https://imax-movie-reservation.onrender.com/api/get-booking/${bookingId}`);
         setBookingDetails(response.data);
       } catch (err) {
         console.error("Error fetching booking details:", err);

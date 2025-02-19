@@ -27,7 +27,7 @@ const BookingForm = ({ movieTitle }) => {
     if (token) {
       const fetchUserInfo = async () => {
         try {
-          const response = await axios.get("http://localhost:5000/profile", {
+          const response = await axios.get("https://imax-movie-reservation.onrender.com/profile", {
             headers: { Authorization: `Bearer ${token}` },
           });
 

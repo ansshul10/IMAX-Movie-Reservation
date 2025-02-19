@@ -9,7 +9,7 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchShowtimes = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/showtimes");
+        const response = await axios.get("https://imax-movie-reservation.onrender.com/api/showtimes");
         setShowtimes(response.data);
       } catch (error) {
         console.error("Error fetching showtimes:", error);

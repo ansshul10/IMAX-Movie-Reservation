@@ -45,7 +45,7 @@ const Profile = () => {
   
       console.log("Fetching history for user ID:", storedUser.id);
   
-      const response = await axios.get(`http://localhost:5000/api/history/${storedUser.id}`);
+      const response = await axios.get(`https://imax-movie-reservation.onrender.com/api/history/${storedUser.id}`);
       setBookingHistory(response.data);
     } catch (error) {
       console.error("Error fetching booking history:", error);
@@ -62,7 +62,7 @@ const Profile = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put("http://localhost:5000/profile", formData, {
+      const response = await axios.put("https://imax-movie-reservation.onrender.com/profile", formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       });
 
@@ -80,7 +80,7 @@ const Profile = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await axios.put("http://localhost:5000/profile", { nickname, age, gender }, {
+      const response = await axios.put("https://imax-movie-reservation.onrender.com/profile", { nickname, age, gender }, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
@@ -98,7 +98,7 @@ const Profile = () => {
 
     try {
       await axios.put(
-        "http://localhost:5000/profile/password",
+        "https://imax-movie-reservation.onrender.com/profile/password",
         { oldPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }
       );
@@ -119,7 +119,7 @@ const Profile = () => {
     const token = localStorage.getItem("token");
 
     try {
-      await axios.delete("http://localhost:5000/profile", {
+      await axios.delete("https://imax-movie-reservation.onrender.com/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -142,7 +142,7 @@ const Profile = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/profile/balance",
+        "https://imax-movie-reservation.onrender.com/profile/balance",
         { pin },
         {
           headers: {
@@ -178,7 +178,7 @@ const Profile = () => {
             <div className="flex justify-center mb-4">
               <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageChange} />
               <img
-                src={previewImage || `http://localhost:5000${user.profileImage}`}
+                src={previewImage || `https://imax-movie-reservation.onrender.com${user.profileImage}`}
                 alt="Profile"
                 className="w-24 h-24 rounded-full object-cover border-2 border-white cursor-pointer hover:scale-105 transition-transform"
                 onClick={() => fileInputRef.current.click()}

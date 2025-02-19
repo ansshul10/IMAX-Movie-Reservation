@@ -17,7 +17,7 @@ const SignIn = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/signin", user);
+      const res = await axios.post("https://imax-movie-reservation.onrender.com/signin", user);
 
       // Save token and user data to localStorage
       localStorage.setItem("token", res.data.token);

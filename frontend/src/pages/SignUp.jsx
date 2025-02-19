@@ -52,7 +52,7 @@ const SignUp = () => {
     formData.append("balance", user.balance);
 
     try {
-      await axios.post("http://localhost:5000/signup", formData, {
+      await axios.post("https://imax-movie-reservation.onrender.com/signup", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Signup successful! Please sign in.");
