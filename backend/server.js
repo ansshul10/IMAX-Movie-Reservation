@@ -37,13 +37,13 @@ app.use(rateLimit({
 
 app.use(helmet()); // Set security-related headers
 
-// Connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/movieDB", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-const db = mongoose.connection;
-db.once("open", () => console.log("Connected to MongoDB"));
+// ✅ MongoDB Connection
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/movieDB";
+mongoose
+  .connect(MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
+
 
 // Multer setup for image upload
 const storage = multer.diskStorage({
