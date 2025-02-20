@@ -15,14 +15,6 @@ const MovieBanner = () => {
       <div className="absolute top-0 left-0 w-full h-full flex flex-col justify-center p-10 text-white z-10">
         <h1 className="text-5xl font-bold">{movie.title}</h1>
         <p className="mt-3">{movie.description}</p>
-        <div className="mt-4">
-          <div
-            className="bg-blue-600 px-6 py-2 rounded flex items-center gap-2 cursor-pointer"
-            onClick={() => setShowTrailer(true)}
-          >
-            <FaPlay /> Watch Trailer
-          </div>
-        </div>
       </div>
 
       {/* Trending Now Sidebar */}
