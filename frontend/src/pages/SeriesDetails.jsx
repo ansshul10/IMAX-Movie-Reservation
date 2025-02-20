@@ -3,31 +3,25 @@ import { useParams, Link } from "react-router-dom";
 import seriesData from "../data/series"; // Assuming you have a series dataset
 
 const SeriesDetails = () => {
-  const { id } = useParams();
-  const series = seriesData.find((s) => s.id === parseInt(id));
+  const { id } = useParams(); // Grabs the series ID from the URL
+  const series = seriesData.find((s) => s.id === parseInt(id)); // Find the series based on the ID
   const [showTrailer, setShowTrailer] = useState(false);
   const [recommendedSeries, setRecommendedSeries] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortType, setSortType] = useState("imdb");
 
   useEffect(() => {
     if (!series) {
+      // If the series doesn't exist, show an error
       alert("Series not found!");
     } else {
+      // Find recommended series based on the same genre
       const related = seriesData.filter((s) => s.genre === series.genre && s.id !== series.id);
-      setRecommendedSeries(related);
+      setRecommendedSeries(related.slice(0, 4)); // Limit to 4 related series
     }
   }, [series]);
 
   if (!series) return <div className="text-orange-500 text-center text-2xl mt-10">Series not found!</div>;
 
-  const trailerUrl = series.trailer ? `https://www.youtube.com/embed/${series.trailer}?autoplay=1` : null;
-
-  // Handle search
-  const filteredSeries = recommendedSeries.filter((s) => s.title.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  // Handle sorting
-  const sortedSeries = [...filteredSeries].sort((a, b) => (sortType === "imdb" ? b.imdb - a.imdb : b.year - a.year));
+  const trailerUrl = series.trailer ? https://www.youtube.com/embed/${series.trailer}?autoplay=1 : null;
 
   return (
     <div className="p-10 bg-black text-orange-500 min-h-screen flex flex-col items-center">
@@ -43,7 +37,7 @@ const SeriesDetails = () => {
       <button
         className="mt-6 bg-black text-orange-500 px-6 py-2 rounded-lg text-lg font-semibold shadow-lg transform transition hover:text-red-500 hover:bg-black hover:scale-105"
         onClick={() => setShowTrailer(true)}
-        aria-label={`Watch trailer for ${series.title}`}
+        aria-label={Watch trailer for ${series.title}}
       >
         🎬 Watch Trailer
       </button>
@@ -62,43 +56,27 @@ const SeriesDetails = () => {
             <iframe
               className="w-full h-64 md:h-96 rounded-lg shadow-lg"
               src={trailerUrl}
-              title={`Trailer for ${series.title}`}
+              title={Trailer for ${series.title}}
               allow="autoplay"
             />
           </div>
         </div>
       )}
 
-      {/* Search and Sort Controls */}
-      <div className="mt-8 w-full max-w-4xl flex justify-between">
-        <input
-          type="text"
-          placeholder="Search series..."
-          className="px-4 py-2 rounded bg-gray-800 text-white w-2/3"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <select
-          className="px-4 py-2 rounded bg-gray-800 text-white"
-          value={sortType}
-          onChange={(e) => setSortType(e.target.value)}
-        >
-          <option value="imdb">Sort by IMDb</option>
-          <option value="year">Sort by Year</option>
-        </select>
-      </div>
+      {/* Series Description */}
+      <div className="mt-8 text-lg text-orange-400">{series.description}</div>
 
       {/* Recommended Series Section */}
-      {sortedSeries.length > 0 && (
+      {recommendedSeries.length > 0 && (
         <div className="mt-10 w-full max-w-4xl">
           <h3 className="text-2xl font-semibold mb-4">Recommended Series</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {sortedSeries.map((recommended) => (
+            {recommendedSeries.map((recommended) => (
               <Link
                 key={recommended.id}
-                to={`/series/${recommended.id}`}
+                to={/series/${recommended.id}}
                 className="cursor-pointer"
-                aria-label={`View details for ${recommended.title}`}
+                aria-label={View details for ${recommended.title}}
               >
                 <img
                   src={recommended.image}
