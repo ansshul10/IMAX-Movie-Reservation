@@ -3,25 +3,31 @@ import { useParams, Link } from "react-router-dom";
 import seriesData from "../data/series"; // Assuming you have a series dataset
 
 const SeriesDetails = () => {
-  const { id } = useParams(); // Grabs the series ID from the URL
-  const series = seriesData.find((s) => s.id === parseInt(id)); // Find the series based on the ID
+  const { id } = useParams();
+  const series = seriesData.find((s) => s.id === parseInt(id));
   const [showTrailer, setShowTrailer] = useState(false);
   const [recommendedSeries, setRecommendedSeries] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortType, setSortType] = useState("imdb");
 
   useEffect(() => {
     if (!series) {
-      // If the series doesn't exist, show an error
       alert("Series not found!");
     } else {
-      // Find recommended series based on the same genre
       const related = seriesData.filter((s) => s.genre === series.genre && s.id !== series.id);
-      setRecommendedSeries(related.slice(0, 4)); // Limit to 4 related series
+      setRecommendedSeries(related);
     }
   }, [series]);
 
   if (!series) return <div className="text-orange-500 text-center text-2xl mt-10">Series not found!</div>;
 
   const trailerUrl = series.trailer ? `https://www.youtube.com/embed/${series.trailer}?autoplay=1` : null;
+
+  // Handle search
+  const filteredSeries = recommendedSeries.filter((s) => s.title.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  // Handle sorting
+  const sortedSeries = [...filteredSeries].sort((a, b) => (sortType === "imdb" ? b.imdb - a.imdb : b.year - a.year));
 
   return (
     <div className="p-10 bg-black text-orange-500 min-h-screen flex flex-col items-center">
@@ -63,15 +69,31 @@ const SeriesDetails = () => {
         </div>
       )}
 
-      {/* Series Description */}
-      <div className="mt-8 text-lg text-orange-400">{series.description}</div>
+      {/* Search and Sort Controls */}
+      <div className="mt-8 w-full max-w-4xl flex justify-between">
+        <input
+          type="text"
+          placeholder="Search series..."
+          className="px-4 py-2 rounded bg-gray-800 text-white w-2/3"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select
+          className="px-4 py-2 rounded bg-gray-800 text-white"
+          value={sortType}
+          onChange={(e) => setSortType(e.target.value)}
+        >
+          <option value="imdb">Sort by IMDb</option>
+          <option value="year">Sort by Year</option>
+        </select>
+      </div>
 
       {/* Recommended Series Section */}
-      {recommendedSeries.length > 0 && (
+      {sortedSeries.length > 0 && (
         <div className="mt-10 w-full max-w-4xl">
           <h3 className="text-2xl font-semibold mb-4">Recommended Series</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {recommendedSeries.map((recommended) => (
+            {sortedSeries.map((recommended) => (
               <Link
                 key={recommended.id}
                 to={`/series/${recommended.id}`}
