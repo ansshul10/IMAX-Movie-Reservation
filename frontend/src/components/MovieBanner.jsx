@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FaPlay } from "react-icons/fa";
 import movies from "../data/PremiumMovies";
-import { Link } from "react-router-dom"; // Don't forget to import Link if needed
 
 const MovieBanner = () => {
   const [showTrailer, setShowTrailer] = useState(false);
@@ -17,12 +16,12 @@ const MovieBanner = () => {
         <h1 className="text-5xl font-bold">{movie.title}</h1>
         <p className="mt-3">{movie.description}</p>
         <div className="mt-4">
-          <button
-            className="bg-blue-600 px-6 py-2 rounded flex items-center gap-2"
+          <div
+            className="bg-blue-600 px-6 py-2 rounded flex items-center gap-2 cursor-pointer"
             onClick={() => setShowTrailer(true)}
           >
             <FaPlay /> Watch Trailer
-          </button>
+          </div>
         </div>
       </div>
 
@@ -32,16 +31,15 @@ const MovieBanner = () => {
           <h2 className="text-xl font-bold text-white mb-4">Trending Now</h2>
           <div className="space-y-4">
             {movies.slice(0, 3).map((movie) => (
-              <Link
+              <div
                 key={movie.id}
-                to={`/movie/${movie.id}`}
-                className="flex items-center space-x-4 p-3 bg-gray-900/50 rounded-lg hover:bg-gray-800 transition duration-300"
+                className="flex items-center space-x-4 p-3 bg-gray-900/50 rounded-lg hover:bg-gray-800 transition duration-300 cursor-pointer"
               >
                 <img 
                   src={movie.image} 
                   alt={movie.title} 
                   className="w-14 h-14 rounded-lg object-cover" 
-                  loading="lazy" // Added lazy loading here too
+                  loading="lazy"
                 />
                 <div className="flex-1">
                   <h3 className="text-white text-sm font-semibold">{movie.title}</h3>
@@ -50,7 +48,7 @@ const MovieBanner = () => {
                 <div className="bg-yellow-500 text-black px-2 py-1 text-xs font-bold rounded">
                   IMDb {movie.imdb}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -68,12 +66,12 @@ const MovieBanner = () => {
               frameBorder="0"
               allowFullScreen
             ></iframe>
-            <button
-              className="absolute top-5 right-5 text-white text-3xl"
+            <div
+              className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
               onClick={() => setShowTrailer(false)}
             >
               ✖
-            </button>
+            </div>
           </div>
         </div>
       )}
