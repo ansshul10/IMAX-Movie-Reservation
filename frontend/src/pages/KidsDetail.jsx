@@ -1,105 +1,155 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import kidsMovies from "../data/kidsMovies"; // Make sure to import your kids movies dataset
+import { useParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import kidsMovies from "../data/kidsMovies";
 
 const KidsDetail = () => {
-  const { id } = useParams(); // Retrieve movie ID from URL
-  const movie = kidsMovies.find((m) => m.id === parseInt(id)); // Find the movie by ID
-  const [relatedMovies, setRelatedMovies] = useState([]); // Store related movies
-  const [showTrailer, setShowTrailer] = useState(false); // Track if trailer modal is open
+  const { id } = useParams();
+  const movie = kidsMovies.find((m) => m.id === parseInt(id));
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [displayedReviews, setDisplayedReviews] = useState([]);
 
+  // Full list of 15 reviews with Indian names
+  const allReviews = [
+    { id: 1, user: "Aarav Sharma", text: "Bahut mazedaar movie hai, bacchon ko pasand aayegi!", rating: 5 },
+    { id: 2, user: "Priya Patel", text: "Great animation and story, pura family enjoy kiya.", rating: 4 },
+    { id: 3, user: "Rohan Gupta", text: "Superb movie for kids, thodi si comedy bhi hai!", rating: 5 },
+    { id: 4, user: "Sneha Verma", text: "This film is amazing, visuals are top-notch!", rating: 4 },
+    { id: 5, user: "Kunal Singh", text: "Ek number movie, dil se pasand aaya!", rating: 5 },
+    { id: 6, user: "Anjali Rao", text: "Very entertaining, kids loved the characters.", rating: 4 },
+    { id: 7, user: "Vikram Yadav", text: "Achhi story hai, thoda emotional bhi laga.", rating: 4 },
+    { id: 8, user: "Neha Kapoor", text: "Mast movie, bacchon ke liye perfect hai!", rating: 5 },
+    { id: 9, user: "Suresh Iyer", text: "Good fun for the whole family, highly recommend!", rating: 4 },
+    { id: 10, user: "Pooja Desai", text: "Animation bahut sundar hai, story bhi acchi!", rating: 5 },
+    { id: 11, user: "Arjun Malhotra", text: "Nice movie, kids were glued to the screen!", rating: 4 },
+    { id: 12, user: "Meera Nair", text: "Thodi si slow hai, par enjoyable hai.", rating: 3 },
+    { id: 13, user: "Rahul Joshi", text: "Full paisa vasool, kids enjoyed a lot!", rating: 5 },
+    { id: 14, user: "Kavita Reddy", text: "Lovely film, perfect for a weekend watch.", rating: 4 },
+    { id: 15, user: "Amitabh Tiwari", text: "Bahut badhiya movie, zaroor dekho!", rating: 5 },
+  ];
+
+  // Shuffle and select 5 reviews on each load
   useEffect(() => {
     if (movie) {
-      // Save the movie to Recently Watched in localStorage
+      // Update recently watched
       let watchedMovies = JSON.parse(localStorage.getItem("recentlyWatched")) || [];
-      watchedMovies = watchedMovies.filter((m) => m.id !== movie.id); // Remove duplicate movie
-      watchedMovies.unshift(movie); // Add the current movie to the beginning
-      localStorage.setItem("recentlyWatched", JSON.stringify(watchedMovies.slice(0, 5))); // Keep only the last 5
+      watchedMovies = watchedMovies.filter((m) => m.id !== movie.id);
+      watchedMovies.unshift(movie);
+      localStorage.setItem("recentlyWatched", JSON.stringify(watchedMovies.slice(0, 5)));
 
-      // Fetch related movies based on genre
-      const related = kidsMovies.filter((m) => m.genre === movie.genre && m.id !== movie.id); // Filter movies with the same genre
-      setRelatedMovies(related.slice(0, 4)); // Limit to 4 related movies
+      // Shuffle reviews and pick 5
+      const shuffled = [...allReviews].sort(() => 0.5 - Math.random());
+      setDisplayedReviews(shuffled.slice(0, 5));
     }
   }, [movie]);
 
-  // If the movie is not found, display an error message
-  if (!movie) return <div className="text-orange-500 text-center text-2xl mt-10">Movie not found!</div>;
+  if (!movie) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-orange-500 text-center text-2xl mt-10"
+      >
+        Movie not found!
+      </motion.div>
+    );
+  }
 
-  const handleTrailerError = () => {
-    alert("Trailer could not be loaded. Please try again later.");
-    setShowTrailer(false); // Close the trailer on error
-  };
-
-  // Generate the trailer URL if it exists
   const trailerUrl = movie.trailer ? `https://www.youtube.com/embed/${movie.trailer}?autoplay=1` : null;
 
+  const shareMovie = () => {
+    navigator.share({
+      title: movie.title,
+      text: `Check out ${movie.title} on this awesome kids movie app!`,
+      url: window.location.href,
+    });
+  };
+
   return (
-    <div className="p-10 bg-black text-orange-500 min-h-screen flex flex-col items-center">
-      
-      {/* Movie Poster */}
-      <img src={movie.image} alt={movie.title} className="rounded-lg w-80 mb-6 shadow-lg" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-gradient-to-br from-black to-gray-900 p-10 text-orange-500 flex flex-col items-center"
+    >
+      <motion.img
+        src={movie.image}
+        alt={movie.title}
+        className="rounded-xl w-96 mb-8 shadow-2xl"
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+      />
 
-      {/* Movie Info */}
-      <h2 className="text-4xl font-bold">{movie.title}</h2>
-      <p className="text-lg text-orange-400 mt-2">{movie.genre} | {movie.year}</p>
-      <p className="text-lg text-orange-400 mt-1">IMDb: {movie.imdb}</p>
-
-      {/* Trailer Button */}
-      <button 
-        className="mt-6 bg-black text-orange-500 px-6 py-2 rounded-lg text-lg font-semibold shadow-lg transform transition hover:text-red-500 hover:bg-black hover:scale-105"
-        onClick={() => setShowTrailer(true)}
-        aria-label={`Watch trailer for ${movie.title}`}
+      <motion.h2
+        className="text-5xl font-extrabold mb-4"
+        initial={{ y: -20 }}
+        animate={{ y: 0 }}
       >
-        🎬 Watch Trailer
-      </button>
+        {movie.title}
+      </motion.h2>
+      <p className="text-xl text-orange-400 mb-2">{movie.genre} | {movie.year}</p>
+      <p className="text-xl text-yellow-400">IMDb: {movie.imdb}</p>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4 mt-6">
+        <button
+          className="bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-all"
+          onClick={() => setShowTrailer(true)}
+        >
+          🎬 Watch Trailer
+        </button>
+        <button
+          className="bg-gray-800 text-orange-500 px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-all"
+          onClick={shareMovie}
+        >
+          Share
+        </button>
+      </div>
 
       {/* Trailer Modal */}
       {showTrailer && trailerUrl && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-40">
-          <div className="relative w-full max-w-2xl">
-            <button 
-              className="absolute top-2 right-2 text-orange-500 text-3xl" 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-50"
+        >
+          <div className="relative w-full max-w-3xl">
+            <button
+              className="absolute top-4 right-4 text-4xl text-orange-500"
               onClick={() => setShowTrailer(false)}
-              aria-label="Close trailer"
             >
               ✖
             </button>
-            <iframe 
-              className="w-full h-64 md:h-96 rounded-lg shadow-lg"
-              src={trailerUrl} 
+            <iframe
+              className="w-full h-80 md:h-[500px] rounded-xl"
+              src={trailerUrl}
               title={`Trailer for ${movie.title}`}
               allow="autoplay"
-              onError={handleTrailerError}
+              onError={() => {
+                alert("Trailer failed to load!");
+                setShowTrailer(false);
+              }}
             />
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Related Movies Section */}
-      {relatedMovies.length > 0 && (
-        <div className="mt-10 w-full max-w-4xl">
-          <h3 className="text-2xl font-semibold mb-4">Related Movies</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {relatedMovies.map((related) => (
-              <Link 
-                key={related.id} 
-                to={`/kids/${related.id}`} 
-                className="cursor-pointer"
-                aria-label={`View details for ${related.title}`}
-              >
-                <img 
-                  src={related.image} 
-                  alt={related.title} 
-                  className="rounded-lg w-full shadow-lg hover:scale-105 transition" 
-                />
-                <h4 className="text-lg font-semibold mt-2">{related.title}</h4>
-                <p className="text-sm text-orange-400">IMDb: {related.imdb}</p>
-              </Link>
-            ))}
+      {/* Reviews Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="mt-10 w-full max-w-4xl"
+      >
+        <h3 className="text-2xl font-semibold mb-4">Reviews</h3>
+        {displayedReviews.map((review) => (
+          <div key={review.id} className="bg-gray-800 p-4 rounded-lg mb-4">
+            <p className="font-semibold">{review.user}</p>
+            <p>{review.text}</p>
+            <p className="text-yellow-400">Rating: {review.rating}/5</p>
           </div>
-        </div>
-      )}
-    </div>
+        ))}
+      </motion.div>
+    </motion.div>
   );
 };
 
