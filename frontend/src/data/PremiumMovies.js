@@ -7,6 +7,11 @@ const movies = [
     imdb: 9.0,
     image: "https://wallpapercat.com/w/middle-retina/b/0/8/37797-3840x2160-desktop-4k-the-dark-knight-wallpaper-image.jpg",
     trailer: "RbMnzkcknQ8", // YouTube video ID for the trailer
+    director: "Christopher Nolan",
+    releaseDate: "July 18, 2008",
+    plot: "When the menace known as the Joker wreaks havoc and chaos on Gotham City, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.",
+    cast: ["Christian Bale", "Heath Ledger", "Aaron Eckhart", "Maggie Gyllenhaal"],
+    runtime: "152 min",
   },
   {
     id: 2,
@@ -16,6 +21,11 @@ const movies = [
     imdb: 8.8,
     image: "https://wallpapers.com/images/high/inception-movie-poster-dreamscape-bp3xh06kgd41qf6i.webp",
     trailer: "YoHD9XEInc0", // YouTube video ID for the trailer
+    director: "Christopher Nolan",
+    releaseDate: "July 16, 2010",
+    plot: "A skilled thief with the ability to enter dreams and steal secrets is given a final job: to plant an idea into the mind of a wealthy businessman's son.",
+    cast: ["Leonardo DiCaprio", "Joseph Gordon-Levitt", "Ellen Page", "Tom Hardy"],
+    runtime: "148 min",
   },
   {
     id: 3,
@@ -25,6 +35,11 @@ const movies = [
     imdb: 8.6,
     image: "https://wallpapers.com/images/hd/interstellar-endurance-on-water-weyznih3sh194a7h.webp",
     trailer: "zSWdZVtXT7E", // YouTube video ID for the trailer
+    director: "Christopher Nolan",
+    releaseDate: "November 7, 2014",
+    plot: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival by finding a new home planet.",
+    cast: ["Matthew McConaughey", "Anne Hathaway", "Jessica Chastain", "Michael Caine"],
+    runtime: "169 min",
   },
   {
     id: 4,
@@ -34,6 +49,11 @@ const movies = [
     imdb: 8.4,
     image: "https://wallpapers.com/images/hd/avengers-endgame-poster-m04w44vwnz7sfomq.webp",
     trailer: "TcMBFSGVi1c", // YouTube video ID for the trailer
+    director: "Anthony Russo, Joe Russo",
+    releaseDate: "April 26, 2019",
+    plot: "After the devastating events of Infinity War, the Avengers assemble once more to reverse Thanos' actions and restore balance to the universe.",
+    cast: ["Robert Downey Jr.", "Chris Evans", "Scarlett Johansson", "Chris Hemsworth"],
+    runtime: "181 min",
   },
   {
     id: 5,
@@ -43,6 +63,11 @@ const movies = [
     imdb: 8.4,
     image: "https://wallpapers.com/images/high/joker-poster-xnlrw622fvm7ki5z.webp",
     trailer: "zAGVQLHvwOY", // YouTube video ID for the trailer
+    director: "Todd Phillips",
+    releaseDate: "October 4, 2019",
+    plot: "An origin story of the iconic villain, exploring Arthur Fleck’s descent into madness and chaos in Gotham City.",
+    cast: ["Joaquin Phoenix", "Robert De Niro", "Zazie Beetz"],
+    runtime: "122 min",
   },
   {
     id: 6,
@@ -52,6 +77,11 @@ const movies = [
     imdb: 8.6,
     image: "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcRa9QXcKkW6fhivLE4LjAdeC7CvLFnJk5vRjkK7siVD5TkeXVfU",
     trailer: "UsxMhM90zP4", // YouTube video ID for the trailer
+    director: "Bong Joon-ho",
+    releaseDate: "May 30, 2019",
+    plot: "A poor family schemes to become employed by a wealthy family, leading to a twisted tale of greed and class disparity.",
+    cast: ["Song Kang-ho", "Lee Sun-kyun", "Cho Yeo-jeong", "Choi Woo-shik"],
+    runtime: "132 min",
   },
   {
     id: 7,
@@ -59,8 +89,13 @@ const movies = [
     year: 1994,
     genre: "Drama",
     imdb: 9.3,
-    image: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRipfEoI8fb4qxidki3e_kp3fr_Kopvoi2yCKcpJGf2ngnKweMR",
+    image: "https://wallpaperaccess.com/full/1632065.jpg",
     trailer: "6hB3S9bIaco", // YouTube video ID for the trailer
+    director: "Frank Darabont",
+    releaseDate: "October 14, 1994",
+    plot: "Two imprisoned men bond over several years, finding solace and eventual redemption through acts of common decency.",
+    cast: ["Tim Robbins", "Morgan Freeman", "Bob Gunton"],
+    runtime: "142 min",
   },
   {
     id: 8,
@@ -68,8 +103,13 @@ const movies = [
     year: 1972,
     genre: "Crime, Drama",
     imdb: 9.2,
-    image: "https://wallpapers.com/images/high/the-godfather-red-zigzag-komiqqdvm2mg8eju.webp",
+    image: "https://wallpapercave.com/wp/wp2846587.jpg",
     trailer: "sY1S34973zA", // YouTube video ID for the trailer
+    director: "Francis Ford Coppola",
+    releaseDate: "March 24, 1972",
+    plot: "The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.",
+    cast: ["Marlon Brando", "Al Pacino", "James Caan"],
+    runtime: "175 min",
   },
   {
     id: 9,
@@ -79,6 +119,11 @@ const movies = [
     imdb: 8.9,
     image: "https://m.media-amazon.com/images/I/71c05lTE03L._AC_SY679_.jpg",
     trailer: "5PsPbd7VqLw", // YouTube video ID for the trailer
+    director: "Quentin Tarantino",
+    releaseDate: "October 14, 1994",
+    plot: "The lives of two mob hitmen, a boxer, a gangster's wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
+    cast: ["John Travolta", "Samuel L. Jackson", "Uma Thurman", "Bruce Willis"],
+    runtime: "154 min",
   },
   {
     id: 10,
@@ -88,6 +133,25 @@ const movies = [
     imdb: 8.8,
     image: "https://wallpapers.com/images/featured/fight-club-ibgirl59hxvxr5y4.webp",
     trailer: "SUXWAEX2jlg", // YouTube video ID for the trailer
+    director: "David Fincher",
+    releaseDate: "October 15, 1999",
+    plot: "An insomniac office worker and a devil-may-care soap maker form an underground fight club that evolves into something much more.",
+    cast: ["Brad Pitt", "Edward Norton", "Helena Bonham Carter"],
+    runtime: "139 min",
+  },
+  {
+    id: 11, // Unique ID, incremented from the last (10)
+    title: "Oppenheimer",
+    year: 2023,
+    genre: "Biography, Drama, History",
+    imdb: 9.4,
+    image: "https://c4.wallpaperflare.com/wallpaper/691/520/918/oppenheimer-j-robert-oppenheimer-desert-hd-wallpaper-preview.jpg",
+    trailer: "uYPbbksJxIg", // YouTube video ID for the official trailer
+    director: "Christopher Nolan",
+    releaseDate: "July 21, 2023",
+    plot: "The story of J. Robert Oppenheimer, the physicist who led the development of the atomic bomb during World War II, and the moral dilemmas he faced as the 'father of the nuclear age.'",
+    cast: ["Cillian Murphy", "Emily Blunt", "Matt Damon", "Robert Downey Jr."],
+    runtime: "180 min",
   },
 ];
 
