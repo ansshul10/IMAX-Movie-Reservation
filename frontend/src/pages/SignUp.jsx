@@ -86,7 +86,6 @@ const SignUp = () => {
         transition={{ duration: 1.2, ease: "easeOut" }}
       >
         <h1 className="bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent drop-shadow-lg">
-          ..................................
           Unlock Your Cinematic
         </h1>
         <p className="text-sm md:text-base text-orange-300 font-medium max-w-md mx-auto tracking-wide">
