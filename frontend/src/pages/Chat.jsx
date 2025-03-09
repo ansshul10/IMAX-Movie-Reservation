@@ -33,29 +33,8 @@ const Chat = () => {
       return;
     }
 
-    const fetchChatHistory = async () => {
-      try {
-        const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        setMessages(
-          res.data.filter((msg) =>
-            chatType === "global"
-              ? !msg.recipientId
-              : (msg.senderId === user.userId && msg.recipientId === selectedUser?.userId) ||
-                (msg.senderId === selectedUser?.userId && msg.recipientId === user.userId)
-          )
-        );
-        scrollToBottom();
-      } catch (err) {
-        console.error("Error fetching chat history:", err);
-        setError("Failed to load chat history");
-      }
-    };
-    fetchChatHistory();
-
     socket.on("connect", () => {
-      console.log("Connected to chat server");
+      console.log("Connected to chat server with ID:", socket.id);
       socket.emit("join", user.userId);
       if (chatType === "global") socket.emit("joinGlobal", user.userId);
     });
@@ -200,27 +179,27 @@ const Chat = () => {
 
   const handleUserSelect = (e) => {
     const userId = e.target.value;
-    console.log("Dropdown value selected:", userId);
+    console.log("Dropdown selected value:", userId);
     if (userId === "global") {
       console.log("Switching to global chat");
       setSelectedUser(null);
       setChatType("global");
-      setMessages([]);
+      setMessages([]); // Clear messages for new session
+      setMessages((prev) => prev.filter((msg) => !msg.recipientId)); // Keep only global messages
       socket.emit("joinGlobal", user.userId);
     } else {
       const targetUser = onlineUsers.find((u) => u.userId === userId);
       if (targetUser) {
-        console.log("Found target user:", targetUser);
+        console.log("Switching to direct chat with:", targetUser);
         setSelectedUser(targetUser);
         setChatType("direct");
-        setMessages([]);
+        setMessages([]); // Clear messages for new direct chat session
         socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
       } else {
-        console.error("User not found in onlineUsers:", userId);
+        console.error("Selected user not found in onlineUsers:", userId);
         console.log("Current onlineUsers:", onlineUsers);
       }
     }
-    console.log("Current selectedUser:", selectedUser); // Note: Logs old state due to async setState
   };
 
   const handleLogout = () => {
@@ -278,7 +257,7 @@ const Chat = () => {
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 bg-black/30 rounded-xl border border-orange-500/40 p-2">
+          <div className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
