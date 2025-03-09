@@ -1,3 +1,4 @@
+// frontend/src/pages/SignUp.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -15,7 +16,7 @@ const SignUp = () => {
     profileImage: null,
     balance: 0,
   });
-  const [message, setMessage] = useState(""); // Added for feedback
+  const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
@@ -52,10 +53,15 @@ const SignUp = () => {
       const res = await axios.post("https://imax-movie-reservation.onrender.com/signup", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setMessage("Signup successful! Redirecting to sign-in...");
-      setTimeout(() => navigate("/signin"), 2000); // Redirect after 2 seconds
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user)); // Includes userId
+      setMessage("Signup successful! Welcome aboard! 🚀");
+      setTimeout(() => {
+        navigate("/chat"); // Redirect to chat
+        window.location.reload();
+      }, 2000);
     } catch (err) {
-      setMessage(err.response?.data?.error || "Signup failed. Try again!");
+      setMessage(err.response?.data?.message || "Signup failed. Try again!");
     }
   };
 
