@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -47,7 +47,6 @@ const verifyToken = (req, res, next) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Access Denied" });
   }
-
   const token = authHeader.split(" ")[1];
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
@@ -131,12 +130,15 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    const resetLink = `https://imaxbooking.netlify.app/reset-password/${token}`; // Match your frontend URL
+    const resetLink = `https://imaxbooking.netlify.app/reset-password/${token}`;
+    const timestamp = new Date().toLocaleString("en-US", { timeZone: "UTC" });
+    const ipAddress = req.ip || "Unknown";
+
     const mailOptions = {
-      from: `"IMAX Booking Team" <${process.env.EMAIL_USER}>`, // Sender name and email
+      from: `"IMAX Booking Team" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "🔑 Your Password Reset Request - IMAX Booking",
-      text: `Hi ${user.name},\n\nYou requested a password reset on ${timestamp}. Click this link to reset your password: ${resetLink}\n\nThis link expires in 1 hour. If you didn’t request this, please ignore this email or contact support.\n\nBest,\nIMAX Booking Team`, // Fallback plain text
+      text: `Hi ${user.name},\n\nYou requested a password reset on ${timestamp}. Click this link to reset your password: ${resetLink}\n\nThis link expires in 1 hour. If you didn’t request this, please ignore this email or contact support.\n\nBest,\nIMAX Booking Team`,
       html: `
         <!DOCTYPE html>
         <html lang="en">
