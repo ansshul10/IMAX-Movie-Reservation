@@ -4,7 +4,7 @@ const router = express.Router();
 const Booking = require("../models/Booking");
 const User = require("../models/User");
 const { transporter } = require("../server");
-const QRCode = require("qrcode"); // Add QRCode library
+const QRCode = require("qrcode");
 
 router.post("/book-ticket", async (req, res) => {
   try {
@@ -28,17 +28,14 @@ router.post("/book-ticket", async (req, res) => {
       return res.status(400).json({ message: "Insufficient balance! Please add more funds." });
     }
 
-    // Deduct balance
     userData.balance -= price;
     await userData.save();
     console.log("Updated user balance:", userData.balance);
 
-    // Save the booking
     const newBooking = new Booking({ user, name, email, age, seatType, numSeats, showtime, price });
     await newBooking.save();
     console.log("Booking saved:", newBooking);
 
-    // Generate QR code with booking details
     const qrData = JSON.stringify({
       bookingId: newBooking._id,
       movieTitle: movieTitle || "N/A",
@@ -46,9 +43,9 @@ router.post("/book-ticket", async (req, res) => {
       seats: seats ? seats.join(", ") : `${numSeats} seats`,
       price: `₹${price}`,
     });
-    const qrCodeImage = await QRCode.toDataURL(qrData); // Generate QR code as base64 image
+    const qrCodeImage = await QRCode.toDataURL(qrData);
+    console.log("QR code generated successfully");
 
-    // Premium email template
     const mailOptions = {
       from: `"IMAX Elite Booking" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -100,7 +97,7 @@ router.post("/book-ticket", async (req, res) => {
             </div>
             <div class="footer">
               <p>Thank you for choosing IMAX Elite Booking | Crafted by a $500,000 Developer Team</p>
-              <p>&copy; 2025 IMAX Booking. All rights reserved.</p>
+              <p>© 2025 IMAX Booking. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -108,10 +105,14 @@ router.post("/book-ticket", async (req, res) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log("Premium ticket email sent to:", email);
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log("Premium ticket email sent successfully to:", email);
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+      // Don’t fail the booking if email fails—log it and proceed
+    }
 
-    // Return bookingId in the response
     res.status(201).json({
       message: "Booking successful! Premium ticket sent to your email.",
       balance: userData.balance,
@@ -123,7 +124,7 @@ router.post("/book-ticket", async (req, res) => {
   }
 });
 
-// Get Booking Details by ID (For Confirmation Page)
+// Get Booking Details by ID
 router.get("/get-booking/:bookingId", async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.bookingId);
