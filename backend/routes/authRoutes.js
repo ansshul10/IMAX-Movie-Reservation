@@ -10,7 +10,7 @@ const fs = require("fs");
 
 const router = express.Router();
 
-// Multer setup for image upload (moved from server.js)
+// Multer setup for image upload
 const storage = multer.diskStorage({
   destination: "./uploads/",
   filename: (req, file, cb) => {
@@ -40,6 +40,23 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+// Middleware to verify JWT Token
+const verifyToken = (req, res, next) => {
+  const authHeader = req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Access Denied" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified;
+    next();
+  } catch (error) {
+    res.status(400).json({ message: "Invalid Token" });
+  }
+};
 
 // Signup Route
 router.post("/signup", upload.single("profileImage"), async (req, res) => {
@@ -114,7 +131,7 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    const resetLink = `https://imaxbooking.netlify.app/reset-password/${token}`; // Update if frontend URL differs
+    const resetLink = `https://imaxbooking.netlify.app/reset-password/${token}`; // Match your frontend URL
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: user.email,
@@ -155,6 +172,112 @@ router.post("/reset-password/:token", async (req, res) => {
   } catch (error) {
     console.error("Reset password error:", error);
     res.status(500).json({ error: "Failed to reset password" });
+  }
+});
+
+// Get User Profile
+router.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching profile", error: err.message });
+  }
+});
+
+// Update User Profile
+router.put("/profile", verifyToken, upload.single("profileImage"), async (req, res) => {
+  try {
+    const { nickname, age } = req.body;
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (req.file && user.profileImage) {
+      const oldImagePath = path.join(__dirname, "../uploads", path.basename(user.profileImage));
+      if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+    }
+
+    user.nickname = nickname || user.nickname;
+    user.age = age || user.age;
+    user.profileImage = req.file ? `/uploads/${req.file.filename}` : user.profileImage;
+
+    await user.save();
+    res.json({ message: "Profile updated successfully", user });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating profile", error: err.message });
+  }
+});
+
+// Change Password
+router.put("/profile/password", verifyToken, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Incorrect old password" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error changing password", error: err.message });
+  }
+});
+
+// Delete User Account
+router.delete("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.profileImage) {
+      const oldImagePath = path.join(__dirname, "../uploads", path.basename(user.profileImage));
+      if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+    }
+
+    await User.findByIdAndDelete(req.user.userId);
+    res.json({ message: "Account deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting account", error: err.message });
+  }
+});
+
+// Add funds to user balance
+router.put("/profile/balance", verifyToken, async (req, res) => {
+  const { amount } = req.body;
+
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.balance += amount;
+    await user.save();
+
+    res.json({ message: `Balance updated by ${amount}`, balance: user.balance });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating balance", error: err.message });
+  }
+});
+
+// Check Balance with PIN
+router.post("/profile/balance", verifyToken, async (req, res) => {
+  const { pin } = req.body;
+
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(400).json({ error: "User not found" });
+
+    const isPinMatch = await bcrypt.compare(pin, user.pin);
+    if (!isPinMatch) return res.status(400).json({ error: "Incorrect PIN!" });
+
+    res.json({ balance: user.balance });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
   }
 });
 
