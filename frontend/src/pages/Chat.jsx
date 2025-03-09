@@ -36,8 +36,8 @@ const Chat = () => {
         const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        // Filter for global messages only (recipientId: null)
         const globalMessages = res.data.filter((msg) => !msg.recipientId);
+        console.log("Fetched chat history:", globalMessages);
         setMessages(globalMessages);
         scrollToBottom();
       } catch (err) {
@@ -54,9 +54,9 @@ const Chat = () => {
     });
 
     socket.on("receiveMessage", (data) => {
+      console.log("Received message from server:", data);
       if (!data.recipientId) { // Only global messages
         setMessages((prev) => {
-          // Avoid duplicates by checking messageId
           if (!prev.some((msg) => msg.messageId === data.messageId)) {
             return [...prev, data];
           }
@@ -142,13 +142,16 @@ const Chat = () => {
       senderId: user.userId,
       senderName: user.name,
       message,
-      timestamp: new Date(),
-      messageId: Date.now().toString(),
+      timestamp: new Date().toISOString(), // Consistent timestamp format
+      messageId: Date.now().toString(), // Unique ID
       recipientId: null, // Global chat only
+      edited: false, // Ensure server recognizes as new
+      read: false,
     };
 
+    console.log("Sending message:", messageData);
     socket.emit("sendMessage", messageData);
-    setMessage("");
+    setMessage(""); // Clear input
     scrollToBottom();
   };
 
@@ -160,12 +163,14 @@ const Chat = () => {
   const saveEditedMessage = (e) => {
     e.preventDefault();
     if (!message.trim() || !editingMessage) return;
+    console.log("Editing message:", { messageId: editingMessage.messageId, newMessage: message });
     socket.emit("editMessage", { messageId: editingMessage.messageId, newMessage: message });
     setEditingMessage(null);
     setMessage("");
   };
 
   const deleteMessage = (messageId) => {
+    console.log("Deleting message:", messageId);
     socket.emit("deleteMessage", { messageId });
   };
 
