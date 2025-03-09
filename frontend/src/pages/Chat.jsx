@@ -33,8 +33,29 @@ const Chat = () => {
       return;
     }
 
+    const fetchChatHistory = async () => {
+      try {
+        const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setMessages(
+          res.data.filter((msg) =>
+            chatType === "global"
+              ? !msg.recipientId
+              : (msg.senderId === user.userId && msg.recipientId === selectedUser?.userId) ||
+                (msg.senderId === selectedUser?.userId && msg.recipientId === user.userId)
+          )
+        );
+        scrollToBottom();
+      } catch (err) {
+        console.error("Error fetching chat history:", err);
+        setError("Failed to load chat history");
+      }
+    };
+    fetchChatHistory();
+
     socket.on("connect", () => {
-      console.log("Connected to chat server with ID:", socket.id);
+      console.log("Connected to chat server");
       socket.emit("join", user.userId);
       if (chatType === "global") socket.emit("joinGlobal", user.userId);
     });
@@ -44,9 +65,8 @@ const Chat = () => {
         .filter((u) => u.userId !== user.userId)
         .map((u) => ({
           ...u,
-          status: u.socketId ? "online" : "offline",
+          status: u.status || (u.socketId ? "online" : "offline"), // Ensure status is set
         }));
-      console.log("Online users received:", filteredUsers);
       setOnlineUsers(filteredUsers);
     });
 
@@ -179,25 +199,18 @@ const Chat = () => {
 
   const handleUserSelect = (e) => {
     const userId = e.target.value;
-    console.log("Dropdown selected value:", userId);
     if (userId === "global") {
-      console.log("Switching to global chat");
       setSelectedUser(null);
       setChatType("global");
-      setMessages([]); // Clear messages for new session
-      setMessages((prev) => prev.filter((msg) => !msg.recipientId)); // Keep only global messages
+      setMessages([]);
       socket.emit("joinGlobal", user.userId);
     } else {
       const targetUser = onlineUsers.find((u) => u.userId === userId);
       if (targetUser) {
-        console.log("Switching to direct chat with:", targetUser);
         setSelectedUser(targetUser);
         setChatType("direct");
-        setMessages([]); // Clear messages for new direct chat session
+        setMessages([]);
         socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
-      } else {
-        console.error("Selected user not found in onlineUsers:", userId);
-        console.log("Current onlineUsers:", onlineUsers);
       }
     }
   };
@@ -257,12 +270,12 @@ const Chat = () => {
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40">
+          <div className="flex-1 min-h-0 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40 flex flex-col-reverse">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
               <div className="flex flex-col">
-                {messages.map((msg, index) => (
+                {messages.slice().reverse().map((msg, index) => (
                   <div
                     key={index}
                     className={`mb-2 text-sm sm:text-base flex ${
