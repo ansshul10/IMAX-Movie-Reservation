@@ -9,7 +9,6 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
-const nodemailer = require("nodemailer");
 const Showtime = require("./models/showtime");
 const Message = require("./models/Message");
 const authRoutes = require("./routes/authRoutes");
@@ -29,24 +28,6 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 5000;
-
-// Email transporter setup
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Verify transporter configuration
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Email transporter verification failed:", error);
-  } else {
-    console.log("Email transporter is ready to send messages");
-  }
-});
 
 // Middleware
 app.use(express.json());
@@ -88,7 +69,7 @@ io.use((socket, next) => {
   }
 });
 
-// Socket.IO Connection Handling (unchanged)
+// Socket.IO Connection Handling
 io.on("connection", (socket) => {
   console.log("User connected:", socket.user.userId);
   socket.on("join", (userId) => {
@@ -254,27 +235,7 @@ app.get("/chat/history", async (req, res) => {
   }
 });
 
-// Test email route
-app.get("/test-email", async (req, res) => {
-  try {
-    const testMailOptions = {
-      from: `"IMAX Elite Booking" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // Send to yourself for testing
-      subject: "Test Email from IMAX Booking",
-      text: "This is a test email to verify email configuration.",
-    };
-    await transporter.sendMail(testMailOptions);
-    console.log("Test email sent successfully");
-    res.status(200).json({ message: "Test email sent successfully" });
-  } catch (error) {
-    console.error("Test email error:", error);
-    res.status(500).json({ message: "Failed to send test email", error: error.message });
-  }
-});
-
 // Start server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-module.exports = { transporter };
