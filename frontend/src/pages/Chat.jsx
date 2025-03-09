@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaUser, FaPaperPlane, FaCheckDouble, FaEdit, FaTrash } from "react-icons/fa";
+import { FaPaperPlane, FaCheckDouble, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const socket = io("https://imax-movie-reservation.onrender.com", {
@@ -13,11 +13,7 @@ const socket = io("https://imax-movie-reservation.onrender.com", {
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [typingUsers, setTypingUsers] = useState(new Set());
-  const [chatType, setChatType] = useState("global");
-  const [editingMessage, setEditingMessage] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
@@ -33,59 +29,15 @@ const Chat = () => {
       return;
     }
 
-    const fetchChatHistory = async () => {
-      try {
-        const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        setMessages(
-          res.data.filter((msg) =>
-            chatType === "global"
-              ? !msg.recipientId
-              : (msg.senderId === user.userId && msg.recipientId === selectedUser?.userId) ||
-                (msg.senderId === selectedUser?.userId && msg.recipientId === user.userId)
-          )
-        );
-        scrollToBottom();
-      } catch (err) {
-        console.error("Error fetching chat history:", err);
-        setError("Failed to load chat history");
-      }
-    };
-    fetchChatHistory();
-
     socket.on("connect", () => {
-      console.log("Connected to chat server");
+      console.log("Connected to chat server with ID:", socket.id);
       socket.emit("join", user.userId);
-      if (chatType === "global") socket.emit("joinGlobal", user.userId);
-    });
-
-    socket.on("onlineUsers", (users) => {
-      const filteredUsers = users
-        .filter((u) => u.userId !== user.userId)
-        .map((u) => ({
-          ...u,
-          status: u.status || (u.socketId ? "online" : "offline"), // Ensure status is set
-        }));
-      setOnlineUsers(filteredUsers);
+      socket.emit("joinGlobal", user.userId); // Always join global chat
     });
 
     socket.on("receiveMessage", (data) => {
-      const isDirect = data.recipientId !== null;
-      const isForMe =
-        (isDirect && (data.recipientId === user.userId || data.senderId === user.userId)) ||
-        (!isDirect && chatType === "global");
-      const matchesChat =
-        (chatType === "global" && !data.recipientId) ||
-        (chatType === "direct" &&
-          ((data.senderId === user.userId && data.recipientId === selectedUser?.userId) ||
-           (data.senderId === selectedUser?.userId && data.recipientId === user.userId)));
-
-      if (isForMe && matchesChat) {
+      if (!data.recipientId) { // Only global messages (no recipientId)
         setMessages((prev) => [...prev, data]);
-        if (chatType === "direct" && data.senderId === selectedUser?.userId) {
-          socket.emit("markAsRead", { messageId: data.messageId, recipientId: user.userId });
-        }
         scrollToBottom();
         if (document.hidden && Notification.permission === "granted") {
           new Notification("New Message", { body: `${data.senderName}: ${data.message}` });
@@ -94,13 +46,11 @@ const Chat = () => {
     });
 
     socket.on("userTyping", ({ userId, isTyping }) => {
-      if ((chatType === "global" && !selectedUser) || (chatType === "direct" && userId === selectedUser?.userId)) {
-        setTypingUsers((prev) => {
-          const newSet = new Set(prev);
-          isTyping ? newSet.add(userId) : newSet.delete(userId);
-          return newSet;
-        });
-      }
+      setTypingUsers((prev) => {
+        const newSet = new Set(prev);
+        isTyping ? newSet.add(userId) : newSet.delete(userId);
+        return newSet;
+      });
     });
 
     socket.on("messageRead", ({ messageId }) => {
@@ -138,7 +88,6 @@ const Chat = () => {
 
     return () => {
       socket.off("connect");
-      socket.off("onlineUsers");
       socket.off("receiveMessage");
       socket.off("userTyping");
       socket.off("messageRead");
@@ -148,7 +97,7 @@ const Chat = () => {
       socket.off("connect_error");
       socket.emit("leave", user.userId);
     };
-  }, [navigate, user, chatType, selectedUser]);
+  }, [navigate, user]);
 
   const handleTyping = (e) => {
     setMessage(e.target.value);
@@ -171,7 +120,7 @@ const Chat = () => {
       message,
       timestamp: new Date(),
       messageId: Date.now().toString(),
-      recipientId: chatType === "direct" ? selectedUser?.userId : null,
+      recipientId: null, // Always global
     };
 
     socket.emit("sendMessage", messageData);
@@ -197,24 +146,6 @@ const Chat = () => {
     socket.emit("deleteMessage", { messageId });
   };
 
-  const handleUserSelect = (e) => {
-    const userId = e.target.value;
-    if (userId === "global") {
-      setSelectedUser(null);
-      setChatType("global");
-      setMessages([]);
-      socket.emit("joinGlobal", user.userId);
-    } else {
-      const targetUser = onlineUsers.find((u) => u.userId === userId);
-      if (targetUser) {
-        setSelectedUser(targetUser);
-        setChatType("direct");
-        setMessages([]);
-        socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
-      }
-    }
-  };
-
   const handleLogout = () => {
     socket.emit("leave", user.userId);
     localStorage.removeItem("token");
@@ -230,30 +161,11 @@ const Chat = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Header with Dropdown and Logout */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-          <div className="w-full sm:w-auto mb-2 sm:mb-0">
-            <select
-              value={selectedUser ? selectedUser.userId : "global"}
-              onChange={handleUserSelect}
-              className="w-full sm:w-64 p-2 bg-black/80 border border-orange-500/40 rounded-xl text-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/50 text-sm sm:text-base"
-            >
-              <option value="global">Global Chat</option>
-              {onlineUsers.map((u) => (
-                <option key={u.userId} value={u.userId}>
-                  {u.name} ({u.status})
-                </option>
-              ))}
-            </select>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {onlineUsers.map((u) => (
-                <span key={u.userId} className="flex items-center gap-1 text-xs sm:text-sm text-orange-400">
-                  <span className={`w-2 h-2 rounded-full ${u.status === "online" ? "bg-green-400" : "bg-red-400"}`}></span>
-                  {u.name}
-                </span>
-              ))}
-            </div>
-          </div>
+        {/* Header with Logout */}
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+            Global Chat
+          </h1>
           <button
             onClick={handleLogout}
             className="bg-red-600 text-white p-2 rounded-xl hover:bg-red-700 text-sm sm:text-base"
@@ -264,18 +176,15 @@ const Chat = () => {
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 overflow-hidden">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
-            {chatType === "global" ? "Global Chat" : `Chat with ${selectedUser?.name}`}
-          </h2>
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 min-h-0 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40 flex flex-col-reverse">
+          <div className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
               <div className="flex flex-col">
-                {messages.slice().reverse().map((msg, index) => (
+                {messages.map((msg, index) => (
                   <div
                     key={index}
                     className={`mb-2 text-sm sm:text-base flex ${
@@ -322,7 +231,7 @@ const Chat = () => {
           {typingUsers.size > 0 && (
             <p className="text-orange-500/60 text-xs sm:text-sm mb-2 truncate">
               {[...typingUsers]
-                .map((id) => onlineUsers.find((u) => u.userId === id)?.name || "Someone")
+                .map((id) => messages.find((m) => m.senderId === id)?.senderName || "Someone")
                 .join(", ")}{" "}
               {typingUsers.size === 1 ? "is" : "are"} typing...
             </p>
@@ -332,13 +241,7 @@ const Chat = () => {
               type="text"
               value={message}
               onChange={handleTyping}
-              placeholder={
-                editingMessage
-                  ? "Edit your message..."
-                  : chatType === "global"
-                  ? "Type a message to everyone..."
-                  : `Message ${selectedUser?.name}...`
-              }
+              placeholder={editingMessage ? "Edit your message..." : "Type a message to everyone..."}
               className="flex-1 p-2 sm:p-3 bg-black/30 border border-orange-500/40 rounded-xl text-orange-400 placeholder-orange-500/60 focus:outline-none focus:ring-2 focus:ring-orange-400/50 text-sm sm:text-base"
             />
             <motion.button
