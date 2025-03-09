@@ -16,6 +16,7 @@ const Chat = () => {
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [editingMessage, setEditingMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [isInputFocused, setIsInputFocused] = useState(false); // New state for focus
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const messagesEndRef = useRef(null);
@@ -140,7 +141,20 @@ const Chat = () => {
 
   const handleTyping = (e) => {
     setMessage(e.target.value);
-    socket.emit("typing", { userId: user.userId, isTyping: e.target.value.length > 0 });
+    // Only emit typing event if input is focused
+    if (isInputFocused) {
+      socket.emit("typing", { userId: user.userId, isTyping: e.target.value.length > 0 });
+    }
+  };
+
+  const handleFocus = () => {
+    setIsInputFocused(true);
+    socket.emit("typing", { userId: user.userId, isTyping: message.length > 0 }); // Emit current state on focus
+  };
+
+  const handleBlur = () => {
+    setIsInputFocused(false);
+    socket.emit("typing", { userId: user.userId, isTyping: false }); // Stop typing when unfocused
   };
 
   const sendMessage = (e) => {
@@ -190,7 +204,7 @@ const Chat = () => {
   };
 
   const handleHome = () => {
-    navigate("/home"); // Redirect to home page
+    navigate("/");
   };
 
   return (
@@ -295,7 +309,7 @@ const Chat = () => {
               </div>
             )}
           </div>
-          {typingUsers.size > 0 && (
+          {isInputFocused && typingUsers.size > 0 && ( // Show typing only when focused
             <p className="text-orange-500/60 text-xs sm:text-sm mb-2 truncate">
               {[...typingUsers]
                 .map((id) => messages.find((m) => m.senderId === id)?.senderName || "Someone")
@@ -308,6 +322,8 @@ const Chat = () => {
               type="text"
               value={message}
               onChange={handleTyping}
+              onFocus={handleFocus} // Handle focus
+              onBlur={handleBlur}   // Handle blur
               placeholder={editingMessage ? "Edit your message..." : "Type a message to everyone..."}
               className="flex-1 p-2 sm:p-3 bg-black/30 border border-orange-500/40 rounded-xl text-orange-400 placeholder-orange-500/60 focus:outline-none focus:ring-2 focus:ring-orange-400/50 text-sm sm:text-base"
             />
