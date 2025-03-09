@@ -42,8 +42,11 @@ const Chat = () => {
         const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        const globalMessages = res.data.filter((msg) => !msg.recipientId);
-        console.log("Fetched chat history:", globalMessages);
+        // Filter global messages and sort by timestamp (oldest first)
+        const globalMessages = res.data
+          .filter((msg) => !msg.recipientId)
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        console.log("Fetched chat history (oldest first):", globalMessages);
         setMessages(globalMessages);
         scrollToBottom();
       } catch (err) {
@@ -64,7 +67,7 @@ const Chat = () => {
       if (!data.recipientId) {
         setMessages((prev) => {
           if (!prev.some((msg) => msg.messageId === data.messageId)) {
-            const newMessages = [...prev, data]; // Append to end (bottom)
+            const newMessages = [...prev, data]; // Append new message at bottom
             console.log("Updated messages (new at bottom):", newMessages);
             if (!isAtBottom()) {
               setError("New message below—scroll down to see it!");
