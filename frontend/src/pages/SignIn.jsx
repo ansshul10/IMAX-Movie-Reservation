@@ -27,7 +27,7 @@ const SignIn = () => {
       localStorage.setItem("user", JSON.stringify(res.data.user)); // Includes userId
       setMessage("Great job! You’re in! 🔓");
       setTimeout(() => {
-        navigate("/chat"); // Redirect to chat
+        navigate("/"); // Redirect to chat
         window.location.reload();
       }, 1000);
     } catch (err) {
