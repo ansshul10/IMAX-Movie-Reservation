@@ -39,9 +39,14 @@ const Chat = () => {
         const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setMessages(res.data.filter((msg) => 
-          chatType === "global" ? !msg.recipientId : msg.senderId === selectedUser?.userId || msg.recipientId === selectedUser?.userId
-        ));
+        setMessages(
+          res.data.filter((msg) =>
+            chatType === "global"
+              ? !msg.recipientId
+              : (msg.senderId === user.userId && msg.recipientId === selectedUser?.userId) ||
+                (msg.senderId === selectedUser?.userId && msg.recipientId === user.userId)
+          )
+        );
         scrollToBottom();
       } catch (err) {
         console.error("Error fetching chat history:", err);
@@ -61,10 +66,17 @@ const Chat = () => {
     });
 
     socket.on("receiveMessage", (data) => {
-      if (
+      const isDirect = data.recipientId !== null;
+      const isForMe =
+        (isDirect && (data.recipientId === user.userId || data.senderId === user.userId)) ||
+        (!isDirect && chatType === "global");
+      const matchesChat =
         (chatType === "global" && !data.recipientId) ||
-        (chatType === "direct" && (data.senderId === selectedUser?.userId || data.recipientId === user.userId))
-      ) {
+        (chatType === "direct" &&
+          ((data.senderId === user.userId && data.recipientId === selectedUser?.userId) ||
+           (data.senderId === selectedUser?.userId && data.recipientId === user.userId)));
+
+      if (isForMe && matchesChat) {
         setMessages((prev) => [...prev, data]);
         if (chatType === "direct" && data.senderId === selectedUser?.userId) {
           socket.emit("markAsRead", { messageId: data.messageId, recipientId: user.userId });
@@ -208,61 +220,73 @@ const Chat = () => {
     socket.emit("deleteMessage", { messageId });
   };
 
-  const startDirectChat = (targetUser) => {
-    setSelectedUser(targetUser);
-    setChatType("direct");
-    setMessages([]);
-    socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
+  const handleUserSelect = (e) => {
+    const userId = e.target.value;
+    if (userId === "global") {
+      setSelectedUser(null);
+      setChatType("global");
+      setMessages([]);
+      socket.emit("joinGlobal", user.userId);
+    } else {
+      const targetUser = onlineUsers.find((u) => u.userId === userId);
+      if (targetUser) {
+        setSelectedUser(targetUser);
+        setChatType("direct");
+        setMessages([]);
+        socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
+      }
+    }
   };
 
-  const switchToGlobal = () => {
-    setSelectedUser(null);
-    setChatType("global");
-    setMessages([]);
-    socket.emit("joinGlobal", user.userId);
+  const handleLogout = () => {
+    socket.emit("leave", user.userId);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/signin");
   };
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-orange-950 flex flex-col overflow-hidden">
       <motion.div
-        className="flex flex-col h-full w-full max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:flex-row"
+        className="flex flex-col h-full w-full max-w-4xl mx-auto p-4 sm:p-6 md:p-8"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Sidebar - Online Users */}
-        <div className="w-full lg:w-1/3 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 mb-4 lg:mb-0 lg:mr-4 overflow-y-auto h-[30vh] lg:h-auto">
-          <h3 className="text-lg sm:text-xl font-bold mb-4">Online Users</h3>
-          <button
-            onClick={switchToGlobal}
-            className={`w-full text-left py-2 px-3 mb-2 rounded-xl text-sm sm:text-base ${
-              chatType === "global" ? "bg-orange-600" : "bg-black/30 hover:bg-orange-700/50"
-            }`}
-          >
-            Global Chat
-          </button>
-          <div className="space-y-2">
-            {onlineUsers.map((u) => (
-              <motion.div
-                key={u.userId}
-                className={`flex items-center gap-2 py-2 px-3 rounded-xl cursor-pointer text-sm sm:text-base ${
-                  selectedUser?.userId === u.userId ? "bg-orange-600" : "hover:bg-orange-700/50"
-                }`}
-                onClick={() => startDirectChat(u)}
-                whileHover={{ scale: 1.02 }}
-              >
-                <FaUser className={`text-${u.status === "online" ? "green" : "gray"}-400`} />
-                <span>{u.name}</span>
-                <span className="text-xs text-orange-600 truncate">
-                  ({u.status}{u.lastSeen ? ` - ${new Date(u.lastSeen).toLocaleTimeString()}` : ""})
+        {/* Header with Dropdown and Logout */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+          <div className="w-full sm:w-auto mb-2 sm:mb-0">
+            <select
+              value={selectedUser ? selectedUser.userId : "global"}
+              onChange={handleUserSelect}
+              className="w-full sm:w-64 p-2 bg-black/80 border border-orange-500/40 rounded-xl text-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/50 text-sm sm:text-base"
+            >
+              <option value="global">Global Chat</option>
+              {onlineUsers.map((u) => (
+                <option key={u.userId} value={u.userId}>
+                  {u.name} ({u.status === "online" ? "Online" : "Offline"})
+                </option>
+              ))}
+            </select>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {onlineUsers.map((u) => (
+                <span key={u.userId} className="flex items-center gap-1 text-xs sm:text-sm text-orange-400">
+                  <span className={`w-2 h-2 rounded-full ${u.status === "online" ? "bg-green-400" : "bg-red-400"}`}></span>
+                  {u.name}
                 </span>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white p-2 rounded-xl hover:bg-red-700 text-sm sm:text-base"
+          >
+            Logout
+          </button>
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 h-[70vh] lg:h-auto">
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             {chatType === "global" ? "Global Chat" : `Chat with ${selectedUser?.name}`}
           </h2>
