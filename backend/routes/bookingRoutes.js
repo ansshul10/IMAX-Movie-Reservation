@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const Booking = require("../models/Booking");
 const User = require("../models/User");
-const { transporter } = require("../emailService"); // Update import
+const { transporter } = require("../emailService");
 const QRCode = require("qrcode");
 
 router.post("/book-ticket", async (req, res) => {
@@ -36,15 +36,22 @@ router.post("/book-ticket", async (req, res) => {
     await newBooking.save();
     console.log("Booking saved:", newBooking);
 
-    const qrData = JSON.stringify({
-      bookingId: newBooking._id,
-      movieTitle: movieTitle || "N/A",
-      showtime,
-      seats: seats ? seats.join(", ") : `${numSeats} seats`,
-      price: `₹${price}`,
-    });
-    const qrCodeImage = await QRCode.toDataURL(qrData);
-    console.log("QR code generated successfully");
+    // Generate QR code with error handling
+    let qrCodeImage;
+    try {
+      const qrData = JSON.stringify({
+        bookingId: newBooking._id,
+        movieTitle: movieTitle || "N/A",
+        showtime,
+        seats: seats ? seats.join(", ") : `${numSeats} seats`,
+        price: `₹${price}`,
+      });
+      qrCodeImage = await QRCode.toDataURL(qrData);
+      console.log("QR code generated successfully, length:", qrCodeImage.length);
+    } catch (qrError) {
+      console.error("Error generating QR code:", qrError);
+      qrCodeImage = ""; // Fallback to empty string if QR fails
+    }
 
     const mailOptions = {
       from: `"IMAX Elite Booking" <${process.env.EMAIL_USER}>`,
@@ -90,7 +97,11 @@ router.post("/book-ticket", async (req, res) => {
                 <p><strong>Booking ID:</strong> ${newBooking._id}</p>
               </div>
               <div class="qr-code">
-                <img src="${qrCodeImage}" alt="QR Code for Your Ticket" />
+                ${
+                  qrCodeImage
+                    ? `<img src="${qrCodeImage}" alt="QR Code for Your Ticket" />`
+                    : "<p>QR Code unavailable due to generation error.</p>"
+                }
                 <p>Scan this QR code at the theater for a seamless entry!</p>
               </div>
               <a href="https://imaxbooking.netlify.app/confirmation" class="button">View Confirmation</a>
@@ -110,7 +121,6 @@ router.post("/book-ticket", async (req, res) => {
       console.log("Premium ticket email sent successfully to:", email);
     } catch (emailError) {
       console.error("Error sending email:", emailError);
-      // Proceed even if email fails—don’t block booking
     }
 
     res.status(201).json({
