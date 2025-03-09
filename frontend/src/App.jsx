@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import React, { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
@@ -15,13 +16,14 @@ import AdminPanel from "./pages/AdminPanel";
 import BookingPage from "./pages/BookingPage";
 import BookingForm from "./pages/BookingForm";
 import Confirmation from "./pages/Confirmation";
-import ResetPassword from "./pages/ResetPassword"; // Import the new ResetPassword component
+import ResetPassword from "./pages/ResetPassword";
+import Chat from "./pages/Chat"; // Import the new Chat component
 
 const App = () => {
   const location = useLocation();
   const [isMuted, setIsMuted] = useState(true);
 
-  // Hide Navbar on /admin, /movies/:id, /series/:id, /kids/:id, /BookingPage, /BookingForm, /Confirmation, /reset-password/:token
+  // Hide Navbar on /admin, /movies/:id, /series/:id, /kids/:id, /BookingPage, /BookingForm, /Confirmation, /reset-password/:token, /chat
   const hideNavbar =
     location.pathname === "/admin" ||
     location.pathname.startsWith("/movies/") ||
@@ -29,7 +31,8 @@ const App = () => {
     location.pathname.startsWith("/kids/") ||
     location.pathname === "/BookingForm" ||
     location.pathname === "/Confirmation" ||
-    location.pathname.startsWith("/reset-password/"); // Added reset-password route
+    location.pathname.startsWith("/reset-password/") ||
+    location.pathname === "/chat"; // Added /chat to hide navbar
 
   return (
     <>
@@ -60,6 +63,9 @@ const App = () => {
 
         {/* Reset Password Route */}
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+        {/* Chat Route */}
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </>
   );
