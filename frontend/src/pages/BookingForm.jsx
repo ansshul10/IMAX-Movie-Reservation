@@ -1,3 +1,4 @@
+// frontend/src/pages/BookingForm.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -9,7 +10,7 @@ const BookingForm = () => {
   const [bookingEmail, setBookingEmail] = useState("");
   const [seatType, setSeatType] = useState("");
   const [showtime, setShowtime] = useState("");
-  const [showtimes, setShowtimes] = useState([]); // Fetch from DB
+  const [showtimes, setShowtimes] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [pricePerSeat, setPricePerSeat] = useState(100);
   const [balance, setBalance] = useState(0);
@@ -21,20 +22,17 @@ const BookingForm = () => {
   const token = localStorage.getItem("token");
   const { movieTitle } = location.state || {};
 
-  // Redirect to login if no token
   useEffect(() => {
     if (!token) {
       navigate("/signin");
     }
   }, [token, navigate]);
 
-  // Fetch user info and showtimes
   useEffect(() => {
     if (token) {
       const fetchData = async () => {
         try {
           setLoading(true);
-          // Fetch user info
           const userResponse = await axios.get("https://imax-movie-reservation.onrender.com/profile", {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -47,7 +45,6 @@ const BookingForm = () => {
           setBookingEmail(userResponse.data.email || "");
           setBalance(userResponse.data.balance || 0);
 
-          // Fetch showtimes
           const showtimesResponse = await axios.get("https://imax-movie-reservation.onrender.com/api/showtimes");
           setShowtimes(showtimesResponse.data);
           setLoading(false);
@@ -61,24 +58,20 @@ const BookingForm = () => {
     }
   }, [token]);
 
-  // Update price based on seat type
   useEffect(() => {
     const seatPrices = { Recliner: 300, Balcony: 200, Normal: 100 };
     setPricePerSeat(seatPrices[seatType] || 100);
   }, [seatType]);
 
-  // Simulated 3D seat grid (6x10 layout)
   const seats = Array.from({ length: 60 }, (_, i) => `S${i + 1}`);
   const totalPrice = selectedSeats.length * pricePerSeat;
 
-  // Handle seat selection with 3D effect
   const toggleSeat = (seat) => {
     setSelectedSeats((prev) =>
       prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]
     );
   };
 
-  // Handle booking submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userInfo.name || !bookingEmail || !userInfo.age) {
@@ -130,7 +123,6 @@ const BookingForm = () => {
     }
   };
 
-  // Back button handler
   const handleBackClick = () => navigate(-1);
 
   if (loading) {
@@ -160,7 +152,6 @@ const BookingForm = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-900 text-white px-4 py-6 sm:p-8 md:p-10 overflow-hidden relative">
-      {/* Back Button */}
       <motion.button
         onClick={handleBackClick}
         className="fixed top-4 left-4 p-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-full shadow-xl z-50 border border-orange-500/50"
@@ -173,7 +164,6 @@ const BookingForm = () => {
         <FaArrowLeft size={16} />
       </motion.button>
 
-      {/* Header */}
       <motion.h2
         className="text-xl sm:text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-600 to-orange-800 mb-6 sm:mb-8 text-center tracking-tight"
         initial={{ opacity: 0, y: -40 }}
@@ -183,21 +173,18 @@ const BookingForm = () => {
         {movieTitle ? `${movieTitle} - Elite Booking` : "Premium Booking Suite"}
       </motion.h2>
 
-      {/* Form */}
       <motion.div
         className="w-full max-w-lg sm:max-w-xl md:max-w-3xl mx-auto bg-gray-900/95 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-orange-500/40 relative overflow-hidden"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        {/* Subtle Glow Overlay */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0"
           animate={{ opacity: [0, 0.3, 0] }}
           transition={{ duration: 3, repeat: Infinity }}
         />
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 relative z-10">
-          {/* Name */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
             <label className="block text-orange-400 text-sm font-semibold mb-1">Full Name</label>
             <input
@@ -210,7 +197,6 @@ const BookingForm = () => {
             />
           </motion.div>
 
-          {/* Booking Email */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
             <label className="block text-orange-400 text-sm font-semibold mb-1">Booking Email</label>
             <input
@@ -223,7 +209,6 @@ const BookingForm = () => {
             />
           </motion.div>
 
-          {/* Age */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
             <label className="block text-orange-400 text-sm font-semibold mb-1">Age</label>
             <input
@@ -237,7 +222,6 @@ const BookingForm = () => {
             />
           </motion.div>
 
-          {/* Seat Type */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
             <label className="block text-orange-400 text-sm font-semibold mb-1">Seat Category</label>
             <select
@@ -253,7 +237,6 @@ const BookingForm = () => {
             </select>
           </motion.div>
 
-          {/* Showtime (Fetched from DB) */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
             <label className="block text-orange-400 text-sm font-semibold mb-1">Showtime</label>
             <select
@@ -264,7 +247,7 @@ const BookingForm = () => {
             >
               <option value="">Select Showtime</option>
               {showtimes
-                .filter((st) => st.movieTitle === movieTitle) // Filter by movieTitle if applicable
+                .filter((st) => st.movieTitle === movieTitle)
                 .map((st) => (
                   <option key={st._id} value={st.time}>
                     {st.date} at {st.time} - {st.theater}
@@ -273,7 +256,6 @@ const BookingForm = () => {
             </select>
           </motion.div>
 
-          {/* 3D Seat Selection */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }}>
             <label className="block text-orange-400 text-sm font-semibold mb-2">Select Your Seats</label>
             <div className="relative perspective-1000">
@@ -307,7 +289,6 @@ const BookingForm = () => {
             <p className="text-gray-300 text-xs mt-2">Selected: {selectedSeats.join(", ") || "None"}</p>
           </motion.div>
 
-          {/* Price and Balance */}
           <motion.div
             className="text-center space-y-2"
             initial={{ opacity: 0 }}
@@ -323,7 +304,6 @@ const BookingForm = () => {
             {error && <p className="text-red-400 text-xs font-medium">{error}</p>}
           </motion.div>
 
-          {/* Submit Button */}
           <motion.button
             type="submit"
             className="w-full py-2 sm:py-3 bg-gradient-to-r from-orange-600 to-orange-800 text-white font-semibold text-sm rounded-lg shadow-xl hover:from-orange-700 hover:to-orange-900 focus:outline-none focus:ring-2 focus:ring-orange-600 disabled:opacity-50 transition-all duration-400"
@@ -336,7 +316,6 @@ const BookingForm = () => {
         </form>
       </motion.div>
 
-      {/* Confirmation Modal */}
       <AnimatePresence>
         {confirmation && (
           <motion.div
@@ -368,6 +347,9 @@ const BookingForm = () => {
               </p>
               <p className="text-gray-200 text-sm mb-2 relative z-10">Seats: {confirmation.seats.join(", ")}</p>
               <p className="text-gray-200 text-sm mb-4 relative z-10">Total: ₹{confirmation.totalPrice}</p>
+              <p className="text-gray-200 text-sm mb-4 relative z-10">
+                Your premium ticket with QR code has been sent to {bookingEmail}!
+              </p>
               <motion.button
                 onClick={() => navigate("/confirmation", { state: { bookingId: confirmation.bookingId } })}
                 className="w-full py-2 sm:py-3 bg-gradient-to-r from-orange-600 to-orange-800 text-white font-semibold text-sm rounded-lg shadow-xl hover:from-orange-700 hover:to-orange-900 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all duration-400 relative z-10"
@@ -381,7 +363,6 @@ const BookingForm = () => {
         )}
       </AnimatePresence>
 
-      {/* Error Overlay */}
       <AnimatePresence>
         {error && !confirmation && (
           <motion.div
