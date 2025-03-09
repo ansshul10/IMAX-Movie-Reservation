@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const Booking = require("../models/Booking");
 const User = require("../models/User");
-const { transporter } = require("../server");
+const { transporter } = require("../emailService"); // Update import
 const QRCode = require("qrcode");
 
 router.post("/book-ticket", async (req, res) => {
@@ -110,7 +110,7 @@ router.post("/book-ticket", async (req, res) => {
       console.log("Premium ticket email sent successfully to:", email);
     } catch (emailError) {
       console.error("Error sending email:", emailError);
-      // Don’t fail the booking if email fails—log it and proceed
+      // Proceed even if email fails—don’t block booking
     }
 
     res.status(201).json({
@@ -124,7 +124,6 @@ router.post("/book-ticket", async (req, res) => {
   }
 });
 
-// Get Booking Details by ID
 router.get("/get-booking/:bookingId", async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.bookingId);
@@ -138,7 +137,6 @@ router.get("/get-booking/:bookingId", async (req, res) => {
   }
 });
 
-// Get Booking History for a Specific User
 router.get("/history/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
