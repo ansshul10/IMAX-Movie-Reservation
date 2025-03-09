@@ -9,6 +9,7 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
+const nodemailer = require("nodemailer"); // For email sending
 const Showtime = require("./models/showtime");
 const Message = require("./models/Message");
 const authRoutes = require("./routes/authRoutes");
@@ -28,6 +29,15 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Email transporter setup
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // Middleware
 app.use(express.json());
@@ -255,3 +265,5 @@ app.get("/chat/history", async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+module.exports = { transporter };
