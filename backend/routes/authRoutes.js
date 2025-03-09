@@ -1,3 +1,4 @@
+// backend/routes/authRoutes.js
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -50,6 +51,9 @@ const verifyToken = (req, res, next) => {
   const token = authHeader.split(" ")[1];
   try {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
+    if (!verified.userId) {
+      return res.status(400).json({ message: "Invalid token: userId missing" });
+    }
     req.user = verified;
     next();
   } catch (error) {
@@ -61,7 +65,9 @@ const verifyToken = (req, res, next) => {
 router.post("/signup", upload.single("profileImage"), async (req, res) => {
   try {
     const { name, email, phone, password, balance, pin } = req.body;
-    const profileImage = req.file ? `/uploads/${req.file.filename}` : null;
+    const profileImage = req.file
+      ? `https://imax-movie-reservation.onrender.com/uploads/${req.file.filename}`
+      : null;
 
     if (!name || !email || !password || !pin) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -85,7 +91,21 @@ router.post("/signup", upload.single("profileImage"), async (req, res) => {
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User registered successfully" });
+
+    const token = jwt.sign({ userId: newUser._id, name: newUser.name }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: {
+        userId: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        profileImage: newUser.profileImage,
+      },
+    });
   } catch (error) {
     console.error("Error during signup:", error);
     res.status(500).json({ message: "Error during signup", error: error.message });
@@ -103,12 +123,19 @@ router.post("/signin", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ userId: user._id, name: user.name }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
     res.status(200).json({
       message: "Signin successful",
       token,
-      user: { name: user.name, email: user.email, profileImage: user.profileImage },
+      user: {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Error during signin", error: error.message });
@@ -228,7 +255,7 @@ router.post("/forgot-password", async (req, res) => {
               <p>The IMAX Booking Team</p>
             </div>
             <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} IMAX Booking. All rights reserved.</p>
+              <p>© ${new Date().getFullYear()} IMAX Booking. All rights reserved.</p>
               <p><a href="https://imaxbooking.netlify.app" style="color: #f97316;">Visit our site</a> | <a href="mailto:support@imaxbooking.com" style="color: #f97316;">Contact Us</a></p>
             </div>
           </div>
@@ -299,7 +326,9 @@ router.put("/profile", verifyToken, upload.single("profileImage"), async (req, r
 
     user.nickname = nickname || user.nickname;
     user.age = age || user.age;
-    user.profileImage = req.file ? `/uploads/${req.file.filename}` : user.profileImage;
+    user.profileImage = req.file
+      ? `https://imax-movie-reservation.onrender.com/uploads/${req.file.filename}`
+      : user.profileImage;
 
     await user.save();
     res.json({ message: "Profile updated successfully", user });
