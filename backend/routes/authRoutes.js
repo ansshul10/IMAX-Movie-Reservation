@@ -133,10 +133,106 @@ router.post("/forgot-password", async (req, res) => {
 
     const resetLink = `https://imaxbooking.netlify.app/reset-password/${token}`; // Match your frontend URL
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: `"IMAX Booking Team" <${process.env.EMAIL_USER}>`, // Sender name and email
       to: user.email,
-      subject: "Password Reset Request",
-      text: `You requested a password reset. Click this link to reset your password: ${resetLink}\n\nIf you didn’t request this, ignore this email.`,
+      subject: "🔑 Your Password Reset Request - IMAX Booking",
+      text: `Hi ${user.name},\n\nYou requested a password reset on ${timestamp}. Click this link to reset your password: ${resetLink}\n\nThis link expires in 1 hour. If you didn’t request this, please ignore this email or contact support.\n\nBest,\nIMAX Booking Team`, // Fallback plain text
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              background-color: #f4f4f4;
+              margin: 0;
+              padding: 0;
+            }
+            .container {
+              max-width: 600px;
+              margin: 20px auto;
+              background-color: #ffffff;
+              border-radius: 10px;
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+              overflow: hidden;
+            }
+            .header {
+              background: linear-gradient(90deg, #f97316, #ea580c);
+              color: #ffffff;
+              padding: 20px;
+              text-align: center;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 24px;
+            }
+            .content {
+              padding: 30px;
+              color: #333333;
+              line-height: 1.6;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 25px;
+              background: linear-gradient(90deg, #f97316, #ea580c);
+              color: #ffffff;
+              text-decoration: none;
+              border-radius: 5px;
+              font-weight: bold;
+              margin: 20px 0;
+            }
+            .button:hover {
+              background: linear-gradient(90deg, #ea580c, #f97316);
+            }
+            .footer {
+              background-color: #f4f4f4;
+              padding: 15px;
+              text-align: center;
+              font-size: 12px;
+              color: #666666;
+            }
+            @media (max-width: 600px) {
+              .container {
+                margin: 10px;
+                border-radius: 8px;
+              }
+              .header h1 {
+                font-size: 20px;
+              }
+              .content {
+                padding: 20px;
+              }
+              .button {
+                padding: 10px 20px;
+                font-size: 14px;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔑 Password Reset Request</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${user.name || "User"},</p>
+              <p>We received a request to reset your password for your IMAX Booking account on <strong>${timestamp} (UTC)</strong> from IP: <strong>${ipAddress}</strong>.</p>
+              <p>Click the button below to reset your password. This link is valid for <strong>1 hour</strong>.</p>
+              <a href="${resetLink}" class="button">Reset Your Password</a>
+              <p>If you didn’t request this, please ignore this email or contact our support team at <a href="mailto:support@imaxbooking.com">support@imaxbooking.com</a>.</p>
+              <p>Happy watching!</p>
+              <p>The IMAX Booking Team</p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} IMAX Booking. All rights reserved.</p>
+              <p><a href="https://imaxbooking.netlify.app" style="color: #f97316;">Visit our site</a> | <a href="mailto:support@imaxbooking.com" style="color: #f97316;">Contact Us</a></p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
     };
 
     await transporter.sendMail(mailOptions);
