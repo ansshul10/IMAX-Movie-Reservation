@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaUser, FaPaperPlane, FaCheckDouble, FaEdit, FaTrash, FaFileUpload } from "react-icons/fa";
+import { FaUser, FaPaperPlane, FaCheckDouble, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const socket = io("https://imax-movie-reservation.onrender.com", {
@@ -17,7 +17,6 @@ const Chat = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [chatType, setChatType] = useState("global");
-  const [file, setFile] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -62,7 +61,13 @@ const Chat = () => {
     });
 
     socket.on("onlineUsers", (users) => {
-      setOnlineUsers(users.filter((u) => u.userId !== user.userId));
+      const filteredUsers = users
+        .filter((u) => u.userId !== user.userId)
+        .map((u) => ({
+          ...u,
+          status: u.status || (u.socketId ? "online" : "offline"), // Ensure status is set
+        }));
+      setOnlineUsers(filteredUsers);
     });
 
     socket.on("receiveMessage", (data) => {
@@ -150,13 +155,9 @@ const Chat = () => {
     socket.emit("typing", { userId: user.userId, isTyping: e.target.value.length > 0 });
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const sendMessage = async (e) => {
+  const sendMessage = (e) => {
     e.preventDefault();
-    if (!message.trim() && !file) return;
+    if (!message.trim()) return;
 
     if (!user?.userId) {
       setError("User ID not found. Please sign in again.");
@@ -167,38 +168,14 @@ const Chat = () => {
     const messageData = {
       senderId: user.userId,
       senderName: user.name,
-      message: message || "",
+      message,
       timestamp: new Date(),
       messageId: Date.now().toString(),
       recipientId: chatType === "direct" ? selectedUser?.userId : null,
     };
 
-    if (file) {
-      const formData = new FormData();
-      formData.append("file", file);
-      try {
-        const res = await axios.post(
-          "https://imax-movie-reservation.onrender.com/upload",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        messageData.fileUrl = res.data.fileUrl;
-        messageData.fileType = file.type;
-      } catch (err) {
-        console.error("File upload error:", err);
-        setError("Failed to upload file");
-        return;
-      }
-    }
-
     socket.emit("sendMessage", messageData);
     setMessage("");
-    setFile(null);
     setMessages((prev) => [...prev, { ...messageData, read: false }]);
     scrollToBottom();
   };
@@ -264,7 +241,7 @@ const Chat = () => {
               <option value="global">Global Chat</option>
               {onlineUsers.map((u) => (
                 <option key={u.userId} value={u.userId}>
-                  {u.name} ({u.status === "online" ? "Online" : "Offline"})
+                  {u.name} ({u.status})
                 </option>
               ))}
             </select>
@@ -314,17 +291,7 @@ const Chat = () => {
                         {msg.senderId === user.userId ? "You" : msg.senderName}:
                       </span>
                       <span className="ml-2 break-words">
-                        {msg.fileUrl ? (
-                          msg.fileType.startsWith("image/") ? (
-                            <img src={msg.fileUrl} alt="Attachment" className="max-w-full rounded" />
-                          ) : (
-                            <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-300 underline">
-                              Download File
-                            </a>
-                          )
-                        ) : (
-                          msg.message
-                        )}
+                        {msg.message}
                         {msg.edited && <span className="text-xs text-orange-600 ml-1">(Edited)</span>}
                       </span>
                       <div className="text-orange-600 text-xs mt-1 flex items-center gap-1">
@@ -374,10 +341,6 @@ const Chat = () => {
               }
               className="flex-1 p-2 sm:p-3 bg-black/30 border border-orange-500/40 rounded-xl text-orange-400 placeholder-orange-500/60 focus:outline-none focus:ring-2 focus:ring-orange-400/50 text-sm sm:text-base"
             />
-            <label className="bg-orange-600 p-2 sm:p-3 rounded-xl hover:bg-orange-700 cursor-pointer">
-              <FaFileUpload className="text-sm sm:text-base" />
-              <input type="file" className="hidden" onChange={handleFileChange} />
-            </label>
             <motion.button
               type="submit"
               className="bg-orange-600 text-white p-2 sm:p-3 rounded-xl hover:bg-orange-700"
