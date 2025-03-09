@@ -1,3 +1,4 @@
+// frontend/src/pages/SignIn.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -11,8 +12,8 @@ const jokes = [
 const SignIn = () => {
   const [user, setUser] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
-  const [forgotPassword, setForgotPassword] = useState(false); // Toggle forgot password form
-  const [resetEmail, setResetEmail] = useState(""); // Email for reset request
+  const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
   const navigate = useNavigate();
 
   const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
@@ -23,14 +24,14 @@ const SignIn = () => {
     try {
       const res = await axios.post("https://imax-movie-reservation.onrender.com/signin", user);
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("user", JSON.stringify(res.data.user)); // Includes userId
       setMessage("Great job! You’re in! 🔓");
-      navigate("/");
       setTimeout(() => {
+        navigate("/chat"); // Redirect to chat
         window.location.reload();
-      }, 100);
+      }, 1000);
     } catch (err) {
-      setMessage("Oops! Wrong password or user not registered. Try again! 😜");
+      setMessage(err.response?.data?.message || "Oops! Something went wrong. Try again! 😜");
     }
   };
 
@@ -39,11 +40,11 @@ const SignIn = () => {
     e.preventDefault();
     try {
       const res = await axios.post("https://imax-movie-reservation.onrender.com/forgot-password", { email: resetEmail });
-      setMessage("Reset email sent! Check your inbox. 📧");
-      setForgotPassword(false); // Close the form after success
-      setResetEmail(""); // Clear the input
+      setMessage(res.data.message || "Reset email sent! Check your inbox. 📧");
+      setForgotPassword(false);
+      setResetEmail("");
     } catch (err) {
-      setMessage("Error sending reset email. Try again! 😕");
+      setMessage(err.response?.data?.error || "Error sending reset email. Try again! 😕");
     }
   };
 
