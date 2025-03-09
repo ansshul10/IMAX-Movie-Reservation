@@ -55,7 +55,7 @@ const Chat = () => {
     fetchChatHistory();
 
     socket.on("connect", () => {
-      console.log("Connected to chat server with socket ID:", socket.id);
+      console.log("Connected to chat server");
       socket.emit("join", user.userId);
       if (chatType === "global") socket.emit("joinGlobal", user.userId);
     });
@@ -65,9 +65,8 @@ const Chat = () => {
         .filter((u) => u.userId !== user.userId)
         .map((u) => ({
           ...u,
-          status: u.socketId ? "online" : "offline",
+          status: u.status || (u.socketId ? "online" : "offline"), // Ensure status is set
         }));
-      console.log("Received onlineUsers:", filteredUsers);
       setOnlineUsers(filteredUsers);
     });
 
@@ -200,13 +199,11 @@ const Chat = () => {
 
   const handleUserSelect = (e) => {
     const userId = e.target.value;
-    console.log("Selected user ID:", userId); // Debug log
     if (userId === "global") {
       setSelectedUser(null);
       setChatType("global");
       setMessages([]);
       socket.emit("joinGlobal", user.userId);
-      console.log("Switched to global chat");
     } else {
       const targetUser = onlineUsers.find((u) => u.userId === userId);
       if (targetUser) {
@@ -214,9 +211,6 @@ const Chat = () => {
         setChatType("direct");
         setMessages([]);
         socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
-        console.log("Selected user:", targetUser);
-      } else {
-        console.log("User not found in onlineUsers:", userId);
       }
     }
   };
@@ -276,12 +270,12 @@ const Chat = () => {
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 bg-black/30 rounded-xl border border-orange-500/40 p-2">
+          <div className="flex-1 min-h-0 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40 flex flex-col-reverse">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
               <div className="flex flex-col">
-                {messages.map((msg, index) => (
+                {messages.slice().reverse().map((msg, index) => (
                   <div
                     key={index}
                     className={`mb-2 text-sm sm:text-base flex ${
