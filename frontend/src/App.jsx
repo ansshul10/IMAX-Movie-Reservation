@@ -1,4 +1,4 @@
-import React, { useState } from "react"; // Added useState
+import React, { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import SignIn from "./pages/SignIn";
@@ -15,19 +15,21 @@ import AdminPanel from "./pages/AdminPanel";
 import BookingPage from "./pages/BookingPage";
 import BookingForm from "./pages/BookingForm";
 import Confirmation from "./pages/Confirmation";
+import ResetPassword from "./pages/ResetPassword"; // Import the new ResetPassword component
 
 const App = () => {
   const location = useLocation();
-  const [isMuted, setIsMuted] = useState(true); // Added state for audio control
+  const [isMuted, setIsMuted] = useState(true);
 
-  // Hide Navbar on /admin, /movies/:id, /series/:id, /kids/:id, /BookingPage, /BookingForm, /Confirmation
+  // Hide Navbar on /admin, /movies/:id, /series/:id, /kids/:id, /BookingPage, /BookingForm, /Confirmation, /reset-password/:token
   const hideNavbar =
     location.pathname === "/admin" ||
     location.pathname.startsWith("/movies/") ||
     location.pathname.startsWith("/series/") ||
     location.pathname.startsWith("/kids/") ||
     location.pathname === "/BookingForm" ||
-    location.pathname === "/Confirmation";
+    location.pathname === "/Confirmation" ||
+    location.pathname.startsWith("/reset-password/"); // Added reset-password route
 
   return (
     <>
@@ -50,10 +52,14 @@ const App = () => {
         <Route path="/kids" element={<Kids />} />
         <Route path="/kids/:id" element={<KidsDetail />} />
 
-        <Route path="/admin" element={<AdminPanel />} /> {/* Admin Page */}
+        {/* Admin and Booking Routes */}
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/BookingPage" element={<BookingPage />} />
         <Route path="/BookingForm" element={<BookingForm />} />
         <Route path="/Confirmation" element={<Confirmation />} />
+
+        {/* Reset Password Route */}
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
     </>
   );
