@@ -1,3 +1,4 @@
+// frontend/src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle, FaArrowDown, FaBars, FaTimes, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
@@ -46,6 +47,7 @@ const Navbar = ({ isMuted, setIsMuted }) => {
     { label: "Movies", path: "/movies" },
     { label: "Kids", path: "/kids" },
     { label: "Book Ticket", path: "/BookingPage" },
+    { label: "Chat", path: "/chat" }, // Added Chat link
   ];
 
   return (
@@ -140,7 +142,7 @@ const Navbar = ({ isMuted, setIsMuted }) => {
                 <img
                   src={
                     user.profileImage
-                      ? `https://imax-movie-reservation.onrender.com${user.profileImage}`
+                      ? user.profileImage // Updated to use base64 string directly
                       : "/uploads/default-profile.png"
                   }
                   alt="Profile"
