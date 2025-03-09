@@ -19,17 +19,16 @@ const Chat = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const messagesEndRef = useRef(null);
-  const chatContainerRef = useRef(null); // Ref to track scroll position
+  const chatContainerRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Check if user is at the bottom of the chat
   const isAtBottom = () => {
     if (!chatContainerRef.current) return true;
     const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    return scrollTop + clientHeight >= scrollHeight - 10; // Small tolerance
+    return scrollTop + clientHeight >= scrollHeight - 10; // Tolerance
   };
 
   useEffect(() => {
@@ -38,7 +37,6 @@ const Chat = () => {
       return;
     }
 
-    // Fetch message history from the database
     const fetchChatHistory = async () => {
       try {
         const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
@@ -58,23 +56,24 @@ const Chat = () => {
     socket.on("connect", () => {
       console.log("Connected to chat server with ID:", socket.id);
       socket.emit("join", user.userId);
-      socket.emit("joinGlobal", user.userId); // Join global chat
+      socket.emit("joinGlobal", user.userId);
     });
 
     socket.on("receiveMessage", (data) => {
       console.log("Received message from server:", data);
-      if (!data.recipientId) { // Only global messages
+      if (!data.recipientId) {
         setMessages((prev) => {
           if (!prev.some((msg) => msg.messageId === data.messageId)) {
-            const newMessages = [...prev, data]; // Append at bottom
-            // Check if user is scrolled up
+            const newMessages = [...prev, data]; // Append to end (bottom)
+            console.log("Updated messages (new at bottom):", newMessages);
             if (!isAtBottom()) {
               setError("New message below—scroll down to see it!");
             } else {
-              scrollToBottom(); // Auto-scroll only if at bottom
+              scrollToBottom();
             }
             return newMessages;
           }
+          console.log("Duplicate message skipped:", data);
           return prev;
         });
         if (document.hidden && Notification.permission === "granted") {
@@ -158,7 +157,7 @@ const Chat = () => {
       message,
       timestamp: new Date().toISOString(),
       messageId: Date.now().toString(),
-      recipientId: null, // Global chat only
+      recipientId: null,
       edited: false,
       read: false,
     };
@@ -166,7 +165,7 @@ const Chat = () => {
     console.log("Sending message:", messageData);
     socket.emit("sendMessage", messageData);
     setMessage("");
-    if (isAtBottom()) scrollToBottom(); // Scroll only if already at bottom
+    if (isAtBottom()) scrollToBottom();
   };
 
   const editMessage = (msg) => {
@@ -228,7 +227,9 @@ const Chat = () => {
             className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40"
           >
             {messages.length === 0 ? (
-              <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
+              <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">
+                No messages yet. Start chatting!
+              </p>
             ) : (
               <div className="flex flex-col">
                 {messages.map((msg, index) => (
