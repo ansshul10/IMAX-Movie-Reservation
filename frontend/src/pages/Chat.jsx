@@ -55,7 +55,7 @@ const Chat = () => {
     fetchChatHistory();
 
     socket.on("connect", () => {
-      console.log("Connected to chat server");
+      console.log("Connected to chat server with socket ID:", socket.id);
       socket.emit("join", user.userId);
       if (chatType === "global") socket.emit("joinGlobal", user.userId);
     });
@@ -65,8 +65,9 @@ const Chat = () => {
         .filter((u) => u.userId !== user.userId)
         .map((u) => ({
           ...u,
-          status: u.status || (u.socketId ? "online" : "offline"), // Ensure status is set
+          status: u.socketId ? "online" : "offline", // Rely on socketId presence
         }));
+      console.log("Received onlineUsers:", filteredUsers); // Debug log
       setOnlineUsers(filteredUsers);
     });
 
@@ -263,19 +264,19 @@ const Chat = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 overflow-hidden">
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             {chatType === "global" ? "Global Chat" : `Chat with ${selectedUser?.name}`}
           </h2>
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 min-h-0 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40 flex flex-col-reverse">
+          <div className="flex-1 h-0 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
               <div className="flex flex-col">
-                {messages.slice().reverse().map((msg, index) => (
+                {messages.map((msg, index) => (
                   <div
                     key={index}
                     className={`mb-2 text-sm sm:text-base flex ${
