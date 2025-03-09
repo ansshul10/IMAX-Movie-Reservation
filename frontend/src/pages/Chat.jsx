@@ -30,15 +30,38 @@ const Chat = () => {
       return;
     }
 
+    // Fetch message history from the database
+    const fetchChatHistory = async () => {
+      try {
+        const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        // Filter for global messages only (recipientId: null)
+        const globalMessages = res.data.filter((msg) => !msg.recipientId);
+        setMessages(globalMessages);
+        scrollToBottom();
+      } catch (err) {
+        console.error("Error fetching chat history:", err);
+        setError("Failed to load chat history");
+      }
+    };
+    fetchChatHistory();
+
     socket.on("connect", () => {
       console.log("Connected to chat server with ID:", socket.id);
       socket.emit("join", user.userId);
-      socket.emit("joinGlobal", user.userId); // Always join global chat
+      socket.emit("joinGlobal", user.userId); // Join global chat
     });
 
     socket.on("receiveMessage", (data) => {
       if (!data.recipientId) { // Only global messages
-        setMessages((prev) => [...prev, data]);
+        setMessages((prev) => {
+          // Avoid duplicates by checking messageId
+          if (!prev.some((msg) => msg.messageId === data.messageId)) {
+            return [...prev, data];
+          }
+          return prev;
+        });
         scrollToBottom();
         if (document.hidden && Notification.permission === "granted") {
           new Notification("New Message", { body: `${data.senderName}: ${data.message}` });
