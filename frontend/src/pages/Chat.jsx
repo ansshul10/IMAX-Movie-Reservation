@@ -42,7 +42,6 @@ const Chat = () => {
         const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        // Filter global messages and sort by timestamp (oldest first)
         const globalMessages = res.data
           .filter((msg) => !msg.recipientId)
           .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -67,7 +66,7 @@ const Chat = () => {
       if (!data.recipientId) {
         setMessages((prev) => {
           if (!prev.some((msg) => msg.messageId === data.messageId)) {
-            const newMessages = [...prev, data]; // Append new message at bottom
+            const newMessages = [...prev, data];
             console.log("Updated messages (new at bottom):", newMessages);
             if (!isAtBottom()) {
               setError("New message below—scroll down to see it!");
@@ -190,11 +189,8 @@ const Chat = () => {
     socket.emit("deleteMessage", { messageId });
   };
 
-  const handleLogout = () => {
-    socket.emit("leave", user.userId);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/signin");
+  const handleHome = () => {
+    navigate("/home"); // Redirect to home page
   };
 
   return (
@@ -205,16 +201,16 @@ const Chat = () => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Header with Logout */}
+        {/* Header with Home */}
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             Global Chat
           </h1>
           <button
-            onClick={handleLogout}
-            className="bg-red-600 text-white p-2 rounded-xl hover:bg-red-700 text-sm sm:text-base"
+            onClick={handleHome}
+            className="bg-orange-600 text-white p-2 rounded-xl hover:bg-orange-700 text-sm sm:text-base"
           >
-            Logout
+            Home
           </button>
         </div>
 
