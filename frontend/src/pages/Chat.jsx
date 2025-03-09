@@ -14,7 +14,7 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Set());
-  const [editingMessage, setEditingMessage] = useState(null); // Reintroduced
+  const [editingMessage, setEditingMessage] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
@@ -125,8 +125,8 @@ const Chat = () => {
     };
 
     socket.emit("sendMessage", messageData);
-    setMessage("");
-    setMessages((prev) => [...prev, { ...messageData, read: false }]);
+    setMessage(""); // Clear input
+    // Removed local setMessages to avoid duplication
     scrollToBottom();
   };
 
