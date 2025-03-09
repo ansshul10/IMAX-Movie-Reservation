@@ -33,7 +33,6 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 app.use("/uploads", express.static("uploads"));
-// Note: express-rate-limit has been removed to prevent 429 errors
 app.use(helmet());
 app.use(expressIp().getIpInfoMiddleware);
 
@@ -44,7 +43,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|pdf|doc|docx/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -95,11 +94,17 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendMessage", async (data) => {
+    const senderId = data.senderId || socket.user.userId;
+    if (!senderId) {
+      console.error("No senderId provided and no authenticated user found");
+      return socket.emit("error", { message: "Sender ID is required" });
+    }
+
     const messageData = {
-      senderId: data.senderId,
-      senderName: data.senderName,
+      senderId,
+      senderName: data.senderName || socket.user.name,
       message: data.message,
-      timestamp: data.timestamp,
+      timestamp: data.timestamp || new Date(),
       messageId: data.messageId,
       recipientId: data.recipientId || null,
       read: false,
@@ -110,15 +115,15 @@ io.on("connection", (socket) => {
     try {
       const savedMessage = new Message(messageData);
       await savedMessage.save();
+      if (data.recipientId) {
+        const room = `room_${Math.min(senderId, data.recipientId)}_${Math.max(senderId, data.recipientId)}`;
+        io.to(room).emit("receiveMessage", messageData);
+      } else {
+        io.to("globalChat").emit("receiveMessage", messageData);
+      }
     } catch (err) {
       console.error("Error saving message:", err);
-    }
-
-    if (data.recipientId) {
-      const room = `room_${Math.min(data.senderId, data.recipientId)}_${Math.max(data.senderId, data.recipientId)}`;
-      io.to(room).emit("receiveMessage", messageData);
-    } else {
-      io.to("globalChat").emit("receiveMessage", messageData);
+      socket.emit("error", { message: "Failed to save message" });
     }
   });
 
@@ -198,7 +203,6 @@ app.use(authRoutes);
 app.use("/api", showtimeRoutes);
 app.use("/api", bookingRoutes);
 
-// File upload endpoint
 app.post("/upload", upload.single("file"), async (req, res) => {
   const authHeader = req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -235,14 +239,9 @@ app.get("/chat/history", async (req, res) => {
   } catch (error) {
     return res.status(400).json({ message: "Invalid Token" });
   }
-
   try {
     const messages = await Message.find({
-      $or: [
-        { recipientId: null },
-        { senderId: userId },
-        { recipientId: userId },
-      ],
+      $or: [{ recipientId: null }, { senderId: userId }, { recipientId: userId }],
     })
       .sort({ timestamp: -1 })
       .limit(50);
