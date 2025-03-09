@@ -19,6 +19,7 @@ const Chat = () => {
   const [chatType, setChatType] = useState("global");
   const [file, setFile] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const messagesEndRef = useRef(null);
@@ -28,7 +29,7 @@ const Chat = () => {
   };
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.userId) {
       navigate("/signin");
       return;
     }
@@ -43,6 +44,7 @@ const Chat = () => {
         scrollToBottom();
       } catch (err) {
         console.error("Error fetching chat history:", err);
+        setError("Failed to load chat history");
       }
     };
     fetchChatHistory();
@@ -65,7 +67,7 @@ const Chat = () => {
         return updated;
       });
       scrollToBottom();
-      if (document.hidden) {
+      if (document.hidden && Notification.permission === "granted") {
         new Notification("New Message", { body: `${data.senderName}: ${data.message}` });
       }
     });
@@ -98,6 +100,10 @@ const Chat = () => {
       setMessages((prev) => prev.filter((msg) => msg.messageId !== messageId));
     });
 
+    socket.on("error", ({ message }) => {
+      setError(message);
+    });
+
     socket.on("connect_error", (err) => {
       console.error("Connection error:", err.message);
       if (err.message === "Invalid token" || err.message === "Authentication required") {
@@ -120,6 +126,7 @@ const Chat = () => {
       socket.off("messageRead");
       socket.off("messageEdited");
       socket.off("messageDeleted");
+      socket.off("error");
       socket.off("connect_error");
       socket.emit("leave", user.userId);
     };
@@ -137,6 +144,12 @@ const Chat = () => {
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!message.trim() && !file) return;
+
+    if (!user?.userId) {
+      setError("User ID not found. Please sign in again.");
+      navigate("/signin");
+      return;
+    }
 
     const messageData = {
       senderId: user.userId,
@@ -165,6 +178,7 @@ const Chat = () => {
         messageData.fileType = file.type;
       } catch (err) {
         console.error("File upload error:", err);
+        setError("Failed to upload file");
         return;
       }
     }
@@ -239,7 +253,8 @@ const Chat = () => {
                 <FaUser className={`text-${u.status === "online" ? "green" : "gray"}-400`} />
                 <span>{u.name}</span>
                 <span className="text-xs text-orange-600">
-                  ({u.status}{u.lastSeen ? ` - Last seen: ${new Date(u.lastSeen).toLocaleTimeString()}` : ""})
+                  ({u.status}
+                  {u.lastSeen ? ` - Last seen: ${new Date(u.lastSeen).toLocaleTimeString()}` : ""})
                 </span>
               </motion.div>
             ))}
@@ -251,6 +266,9 @@ const Chat = () => {
           <h2 className="text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             {chatType === "global" ? "Global Chat" : `Chat with ${selectedUser?.name}`}
           </h2>
+          {error && (
+            <p className="text-red-400 text-sm mb-2">{error}</p>
+          )}
           <div className="flex-1 h-96 overflow-y-auto bg-black/30 p-4 rounded-xl border border-orange-500/40 mb-4">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center">No messages yet. Start chatting!</p>
