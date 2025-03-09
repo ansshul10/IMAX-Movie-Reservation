@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion"; // For animations
-import { FaEnvelope, FaLock, FaArrowRight } from "react-icons/fa"; // Icons
+import { motion } from "framer-motion";
+import { FaEnvelope, FaLock, FaArrowRight } from "react-icons/fa";
 
 const jokes = [
   "Ready to reserve your seat? Sign in now!",
@@ -11,10 +11,13 @@ const jokes = [
 const SignIn = () => {
   const [user, setUser] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [forgotPassword, setForgotPassword] = useState(false); // Toggle forgot password form
+  const [resetEmail, setResetEmail] = useState(""); // Email for reset request
   const navigate = useNavigate();
 
   const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
 
+  // Sign-in submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -28,6 +31,19 @@ const SignIn = () => {
       }, 100);
     } catch (err) {
       setMessage("Oops! Wrong password or user not registered. Try again! 😜");
+    }
+  };
+
+  // Forgot password submission
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("https://imax-movie-reservation.onrender.com/forgot-password", { email: resetEmail });
+      setMessage("Reset email sent! Check your inbox. 📧");
+      setForgotPassword(false); // Close the form after success
+      setResetEmail(""); // Clear the input
+    } catch (err) {
+      setMessage("Error sending reset email. Try again! 😕");
     }
   };
 
@@ -66,50 +82,112 @@ const SignIn = () => {
         </p>
       </motion.div>
 
-      {/* Right Side - Sign In Form */}
+      {/* Right Side - Sign In or Forgot Password Form */}
       <motion.div
         className="w-full max-w-md bg-white bg-opacity-5 backdrop-blur-xl p-6 rounded-2xl shadow-2xl text-orange-400 m-4 border border-orange-500/15 relative z-10"
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.9, ease: "easeOut" }}
       >
-        <h2 className="text-xl font-extrabold text-center mb-6 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent drop-shadow-sm">
-          Sign In
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="relative group">
-            <FaEnvelope className="absolute left-5 top-1/2 transform -translate-y-1/2 text-orange-500 group-focus-within:text-orange-300 transition-colors duration-300" />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full pl-14 pr-6 py-3 bg-black/20 border border-orange-500/30 rounded-xl text-orange-400 placeholder-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-400 hover:border-orange-500/50 hover:bg-black/30"
-              onChange={(e) => setUser({ ...user, email: e.target.value })}
-              required
-            />
-          </div>
-          <div className="relative group">
-            <FaLock className="absolute left-5 top-1/2 transform -translate-y-1/2 text-orange-500 group-focus-within:text-orange-300 transition-colors duration-300" />
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full pl-14 pr-6 py-3 bg-black/20 border border-orange-500/30 rounded-xl text-orange-400 placeholder-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-400 hover:border-orange-500/50 hover:bg-black/30"
-              onChange={(e) => setUser({ ...user, password: e.target.value })}
-              required
-            />
-          </div>
-          <motion.button
-            type="submit"
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-700 text-white p-3 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:from-orange-600 hover:to-orange-800 hover:shadow-xl flex items-center justify-center gap-2"
-            whileHover={{ scale: 1.04, boxShadow: "0 0 15px rgba(249, 115, 22, 0.3)" }}
-            whileTap={{ scale: 0.96 }}
-          >
-            Sign In <FaArrowRight className="text-sm" />
-          </motion.button>
-        </form>
+        {!forgotPassword ? (
+          <>
+            <h2 className="text-xl font-extrabold text-center mb-6 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent drop-shadow-sm">
+              Sign In
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="relative group">
+                <FaEnvelope className="absolute left-5 top-1/2 transform -translate-y-1/2 text-orange-500 group-focus-within:text-orange-300 transition-colors duration-300" />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  className="w-full pl-14 pr-6 py-3 bg-black/20 border border-orange-500/30 rounded-xl text-orange-400 placeholder-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-400 hover:border-orange-500/50 hover:bg-black/30"
+                  onChange={(e) => setUser({ ...user, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="relative group">
+                <FaLock className="absolute left-5 top-1/2 transform -translate-y-1/2 text-orange-500 group-focus-within:text-orange-300 transition-colors duration-300" />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  className="w-full pl-14 pr-6 py-3 bg-black/20 border border-orange-500/30 rounded-xl text-orange-400 placeholder-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-400 hover:border-orange-500/50 hover:bg-black/30"
+                  onChange={(e) => setUser({ ...user, password: e.target.value })}
+                  required
+                />
+              </div>
+              <motion.button
+                type="submit"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-700 text-white p-3 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:from-orange-600 hover:to-orange-800 hover:shadow-xl flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.04, boxShadow: "0 0 15px rgba(249, 115, 22, 0.3)" }}
+                whileTap={{ scale: 0.96 }}
+              >
+                Sign In <FaArrowRight className="text-sm" />
+              </motion.button>
+            </form>
+            <p className="text-center text-orange-400 mt-4">
+              <span
+                onClick={() => setForgotPassword(true)}
+                className="text-orange-300 hover:text-orange-200 font-semibold cursor-pointer transition-colors duration-300 relative"
+              >
+                Forgot Password?
+                <motion.span
+                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-300"
+                  initial={{ scaleX: 0 }}
+                  whileHover={{ scaleX: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </span>
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-extrabold text-center mb-6 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent drop-shadow-sm">
+              Reset Password
+            </h2>
+            <form onSubmit={handleForgotPassword} className="space-y-6">
+              <div className="relative group">
+                <FaEnvelope className="absolute left-5 top-1/2 transform -translate-y-1/2 text-orange-500 group-focus-within:text-orange-300 transition-colors duration-300" />
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={resetEmail}
+                  className="w-full pl-14 pr-6 py-3 bg-black/20 border border-orange-500/30 rounded-xl text-orange-400 placeholder-orange-500/50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-400 hover:border-orange-500/50 hover:bg-black/30"
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <motion.button
+                type="submit"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-700 text-white p-3 rounded-xl font-semibold shadow-lg transition-all duration-300 hover:from-orange-600 hover:to-orange-800 hover:shadow-xl flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.04, boxShadow: "0 0 15px rgba(249, 115, 22, 0.3)" }}
+                whileTap={{ scale: 0.96 }}
+              >
+                Send Reset Email <FaArrowRight className="text-sm" />
+              </motion.button>
+            </form>
+            <p className="text-center text-orange-400 mt-4">
+              <span
+                onClick={() => setForgotPassword(false)}
+                className="text-orange-300 hover:text-orange-200 font-semibold cursor-pointer transition-colors duration-300 relative"
+              >
+                Back to Sign In
+                <motion.span
+                  className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-300"
+                  initial={{ scaleX: 0 }}
+                  whileHover={{ scaleX: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              </span>
+            </p>
+          </>
+        )}
+
         {message && (
           <motion.div
             className={`mt-4 text-center font-medium rounded-xl p-3 backdrop-blur-md shadow-md ${
-              message.includes("Oops") ? "bg-red-500/20 text-red-300" : "bg-green-500/20 text-green-300"
+              message.includes("Oops") || message.includes("Error")
+                ? "bg-red-500/20 text-red-300"
+                : "bg-green-500/20 text-green-300"
             }`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,21 +196,23 @@ const SignIn = () => {
             {message}
           </motion.div>
         )}
-        <p className="text-center text-orange-400 mt-4">
-          Don’t have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-orange-300 hover:text-orange-200 font-semibold transition-colors duration-300 relative"
-          >
-            Sign Up
-            <motion.span
-              className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-300"
-              initial={{ scaleX: 0 }}
-              whileHover={{ scaleX: 1 }}
-              transition={{ duration: 0.3 }}
-            />
-          </Link>
-        </p>
+        {!forgotPassword && (
+          <p className="text-center text-orange-400 mt-4">
+            Don’t have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-orange-300 hover:text-orange-200 font-semibold transition-colors duration-300 relative"
+            >
+              Sign Up
+              <motion.span
+                className="absolute -bottom-1 left-0 w-full h-0.5 bg-orange-300"
+                initial={{ scaleX: 0 }}
+                whileHover={{ scaleX: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            </Link>
+          </p>
+        )}
       </motion.div>
     </div>
   );
