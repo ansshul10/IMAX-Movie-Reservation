@@ -19,9 +19,17 @@ const Chat = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null); // Ref to track scroll position
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Check if user is at the bottom of the chat
+  const isAtBottom = () => {
+    if (!chatContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    return scrollTop + clientHeight >= scrollHeight - 10; // Small tolerance
   };
 
   useEffect(() => {
@@ -58,11 +66,17 @@ const Chat = () => {
       if (!data.recipientId) { // Only global messages
         setMessages((prev) => {
           if (!prev.some((msg) => msg.messageId === data.messageId)) {
-            return [...prev, data];
+            const newMessages = [...prev, data]; // Append at bottom
+            // Check if user is scrolled up
+            if (!isAtBottom()) {
+              setError("New message below—scroll down to see it!");
+            } else {
+              scrollToBottom(); // Auto-scroll only if at bottom
+            }
+            return newMessages;
           }
           return prev;
         });
-        scrollToBottom();
         if (document.hidden && Notification.permission === "granted") {
           new Notification("New Message", { body: `${data.senderName}: ${data.message}` });
         }
@@ -142,17 +156,17 @@ const Chat = () => {
       senderId: user.userId,
       senderName: user.name,
       message,
-      timestamp: new Date().toISOString(), // Consistent timestamp format
-      messageId: Date.now().toString(), // Unique ID
+      timestamp: new Date().toISOString(),
+      messageId: Date.now().toString(),
       recipientId: null, // Global chat only
-      edited: false, // Ensure server recognizes as new
+      edited: false,
       read: false,
     };
 
     console.log("Sending message:", messageData);
     socket.emit("sendMessage", messageData);
-    setMessage(""); // Clear input
-    scrollToBottom();
+    setMessage("");
+    if (isAtBottom()) scrollToBottom(); // Scroll only if already at bottom
   };
 
   const editMessage = (msg) => {
@@ -205,9 +219,14 @@ const Chat = () => {
         {/* Chat Area */}
         <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 overflow-hidden">
           {error && (
-            <p className="text-red-400 text-sm mb-2">{error}</p>
+            <p className="text-red-400 text-sm mb-2 cursor-pointer" onClick={scrollToBottom}>
+              {error}
+            </p>
           )}
-          <div className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40">
+          <div
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40"
+          >
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
