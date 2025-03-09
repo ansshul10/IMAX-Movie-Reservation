@@ -8,6 +8,7 @@ const Showtime = require("./models/showtime");
 const authRoutes = require("./routes/authRoutes"); // Import authRoutes
 const bookingRoutes = require("./routes/bookingRoutes");
 const showtimeRoutes = require("./routes/showtimeRoutes");
+const expressIp = require("express-ip");
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(
 );
 
 app.use(helmet()); // Set security-related headers
+app.use(expressIp().getIpInfoMiddleware);
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/movieDB";
@@ -40,6 +42,7 @@ mongoose
 app.use(authRoutes); // Mount authRoutes at root level for /signup, /signin, /forgot-password, etc.
 app.use("/api", showtimeRoutes); // Prefix showtime routes with /api
 app.use("/api", bookingRoutes); // Prefix booking routes with /api
+
 
 // Route to get showtimes (consider moving to showtimeRoutes)
 app.get("/showtimes", async (req, res) => {
