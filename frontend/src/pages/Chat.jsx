@@ -125,8 +125,7 @@ const Chat = () => {
     };
 
     socket.emit("sendMessage", messageData);
-    setMessage(""); // Clear input
-    // Removed local setMessages to avoid duplication
+    setMessage("");
     scrollToBottom();
   };
 
@@ -197,27 +196,47 @@ const Chat = () => {
                         msg.senderId === user.userId ? "bg-orange-600" : "bg-black/50"
                       }`}
                     >
-                      <span className="font-semibold text-orange-300">
+                      <span
+                        className={`font-semibold ${
+                          msg.senderId === user.userId ? "text-black" : "text-orange-300"
+                        }`}
+                      >
                         {msg.senderId === user.userId ? "You" : msg.senderName}:
                       </span>
-                      <span className="ml-2 break-words">
+                      <span
+                        className={`ml-2 break-words ${
+                          msg.senderId === user.userId ? "text-black" : ""
+                        }`}
+                      >
                         {msg.message}
-                        {msg.edited && <span className="text-xs text-orange-600 ml-1">(Edited)</span>}
+                        {msg.edited && (
+                          <span
+                            className={`text-xs ml-1 ${
+                              msg.senderId === user.userId ? "text-black" : "text-orange-600"
+                            }`}
+                          >
+                            (Edited)
+                          </span>
+                        )}
                       </span>
-                      <div className="text-orange-600 text-xs mt-1 flex items-center gap-1">
+                      <div
+                        className={`text-xs mt-1 flex items-center gap-1 ${
+                          msg.senderId === user.userId ? "text-black" : "text-orange-600"
+                        }`}
+                      >
                         {new Date(msg.timestamp).toLocaleTimeString()}
                         {msg.read && msg.senderId === user.userId && (
-                          <FaCheckDouble className="text-orange-400" />
+                          <FaCheckDouble className="text-black" />
                         )}
                       </div>
                       {msg.senderId === user.userId && (
                         <div className="flex gap-2 mt-1">
                           <FaEdit
-                            className="cursor-pointer hover:text-orange-300"
+                            className="cursor-pointer text-black hover:text-gray-700"
                             onClick={() => editMessage(msg)}
                           />
                           <FaTrash
-                            className="cursor-pointer hover:text-red-400"
+                            className="cursor-pointer text-black hover:text-gray-700"
                             onClick={() => deleteMessage(msg.messageId)}
                           />
                         </div>
