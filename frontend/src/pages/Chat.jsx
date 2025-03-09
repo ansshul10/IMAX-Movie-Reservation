@@ -65,9 +65,9 @@ const Chat = () => {
         .filter((u) => u.userId !== user.userId)
         .map((u) => ({
           ...u,
-          status: u.socketId ? "online" : "offline", // Rely on socketId presence
+          status: u.socketId ? "online" : "offline",
         }));
-      console.log("Received onlineUsers:", filteredUsers); // Debug log
+      console.log("Received onlineUsers:", filteredUsers);
       setOnlineUsers(filteredUsers);
     });
 
@@ -200,11 +200,13 @@ const Chat = () => {
 
   const handleUserSelect = (e) => {
     const userId = e.target.value;
+    console.log("Selected user ID:", userId); // Debug log
     if (userId === "global") {
       setSelectedUser(null);
       setChatType("global");
       setMessages([]);
       socket.emit("joinGlobal", user.userId);
+      console.log("Switched to global chat");
     } else {
       const targetUser = onlineUsers.find((u) => u.userId === userId);
       if (targetUser) {
@@ -212,6 +214,9 @@ const Chat = () => {
         setChatType("direct");
         setMessages([]);
         socket.emit("joinDirect", { userId: user.userId, targetUserId: targetUser.userId });
+        console.log("Selected user:", targetUser);
+      } else {
+        console.log("User not found in onlineUsers:", userId);
       }
     }
   };
@@ -264,14 +269,14 @@ const Chat = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20">
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 overflow-hidden">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             {chatType === "global" ? "Global Chat" : `Chat with ${selectedUser?.name}`}
           </h2>
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 h-0 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40">
+          <div className="flex-1 bg-black/30 rounded-xl border border-orange-500/40 p-2">
             {messages.length === 0 ? (
               <p className="text-orange-500/60 text-center text-sm sm:text-base py-4">No messages yet. Start chatting!</p>
             ) : (
