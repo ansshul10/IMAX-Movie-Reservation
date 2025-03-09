@@ -34,13 +34,14 @@ const Chat = () => {
       return;
     }
 
-    // Fetch initial chat history
     const fetchChatHistory = async () => {
       try {
         const res = await axios.get("https://imax-movie-reservation.onrender.com/chat/history", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setMessages(res.data);
+        setMessages(res.data.filter((msg) => 
+          chatType === "global" ? !msg.recipientId : msg.senderId === selectedUser?.userId || msg.recipientId === selectedUser?.userId
+        ));
         scrollToBottom();
       } catch (err) {
         console.error("Error fetching chat history:", err);
@@ -52,6 +53,7 @@ const Chat = () => {
     socket.on("connect", () => {
       console.log("Connected to chat server");
       socket.emit("join", user.userId);
+      if (chatType === "global") socket.emit("joinGlobal", user.userId);
     });
 
     socket.on("onlineUsers", (users) => {
@@ -59,40 +61,40 @@ const Chat = () => {
     });
 
     socket.on("receiveMessage", (data) => {
-      setMessages((prev) => {
-        const updated = [...prev, data];
+      if (
+        (chatType === "global" && !data.recipientId) ||
+        (chatType === "direct" && (data.senderId === selectedUser?.userId || data.recipientId === user.userId))
+      ) {
+        setMessages((prev) => [...prev, data]);
         if (chatType === "direct" && data.senderId === selectedUser?.userId) {
           socket.emit("markAsRead", { messageId: data.messageId, recipientId: user.userId });
         }
-        return updated;
-      });
-      scrollToBottom();
-      if (document.hidden && Notification.permission === "granted") {
-        new Notification("New Message", { body: `${data.senderName}: ${data.message}` });
+        scrollToBottom();
+        if (document.hidden && Notification.permission === "granted") {
+          new Notification("New Message", { body: `${data.senderName}: ${data.message}` });
+        }
       }
     });
 
     socket.on("userTyping", ({ userId, isTyping }) => {
-      setTypingUsers((prev) => {
-        const newSet = new Set(prev);
-        isTyping ? newSet.add(userId) : newSet.delete(userId);
-        return newSet;
-      });
+      if ((chatType === "global" && !selectedUser) || (chatType === "direct" && userId === selectedUser?.userId)) {
+        setTypingUsers((prev) => {
+          const newSet = new Set(prev);
+          isTyping ? newSet.add(userId) : newSet.delete(userId);
+          return newSet;
+        });
+      }
     });
 
     socket.on("messageRead", ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.messageId === messageId ? { ...msg, read: true } : msg
-        )
+        prev.map((msg) => (msg.messageId === messageId ? { ...msg, read: true } : msg))
       );
     });
 
     socket.on("messageEdited", ({ messageId, newMessage }) => {
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.messageId === messageId ? { ...msg, message: newMessage, edited: true } : msg
-        )
+        prev.map((msg) => (msg.messageId === messageId ? { ...msg, message: newMessage, edited: true } : msg))
       );
     });
 
@@ -113,7 +115,6 @@ const Chat = () => {
       }
     });
 
-    // Request notification permission
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
@@ -130,7 +131,7 @@ const Chat = () => {
       socket.off("connect_error");
       socket.emit("leave", user.userId);
     };
-  }, [navigate, user]);
+  }, [navigate, user, chatType, selectedUser]);
 
   const handleTyping = (e) => {
     setMessage(e.target.value);
@@ -156,7 +157,7 @@ const Chat = () => {
       senderName: user.name,
       message: message || "",
       timestamp: new Date(),
-      messageId: Date.now().toString(), // Replace with UUID in production
+      messageId: Date.now().toString(),
       recipientId: chatType === "direct" ? selectedUser?.userId : null,
     };
 
@@ -222,29 +223,29 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-orange-950 p-8 flex items-center justify-center">
+    <div className="fixed inset-0 bg-gradient-to-br from-black via-gray-900 to-orange-950 flex flex-col overflow-hidden">
       <motion.div
-        className="w-full max-w-4xl bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-6 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 flex"
+        className="flex flex-col h-full w-full max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:flex-row"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8 }}
       >
-        {/* Online Users Sidebar */}
-        <div className="w-1/3 border-r border-orange-500/40 pr-4">
-          <h3 className="text-xl font-bold mb-4">Online Users</h3>
+        {/* Sidebar - Online Users */}
+        <div className="w-full lg:w-1/3 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 mb-4 lg:mb-0 lg:mr-4 overflow-y-auto h-[30vh] lg:h-auto">
+          <h3 className="text-lg sm:text-xl font-bold mb-4">Online Users</h3>
           <button
             onClick={switchToGlobal}
-            className={`w-full text-left py-2 px-3 mb-2 rounded-xl ${
+            className={`w-full text-left py-2 px-3 mb-2 rounded-xl text-sm sm:text-base ${
               chatType === "global" ? "bg-orange-600" : "bg-black/30 hover:bg-orange-700/50"
             }`}
           >
             Global Chat
           </button>
-          <div className="max-h-64 overflow-y-auto">
+          <div className="space-y-2">
             {onlineUsers.map((u) => (
               <motion.div
                 key={u.userId}
-                className={`flex items-center gap-2 py-2 px-3 rounded-xl cursor-pointer ${
+                className={`flex items-center gap-2 py-2 px-3 rounded-xl cursor-pointer text-sm sm:text-base ${
                   selectedUser?.userId === u.userId ? "bg-orange-600" : "hover:bg-orange-700/50"
                 }`}
                 onClick={() => startDirectChat(u)}
@@ -252,9 +253,8 @@ const Chat = () => {
               >
                 <FaUser className={`text-${u.status === "online" ? "green" : "gray"}-400`} />
                 <span>{u.name}</span>
-                <span className="text-xs text-orange-600">
-                  ({u.status}
-                  {u.lastSeen ? ` - Last seen: ${new Date(u.lastSeen).toLocaleTimeString()}` : ""})
+                <span className="text-xs text-orange-600 truncate">
+                  ({u.status}{u.lastSeen ? ` - ${new Date(u.lastSeen).toLocaleTimeString()}` : ""})
                 </span>
               </motion.div>
             ))}
@@ -262,72 +262,74 @@ const Chat = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="w-2/3 pl-4 flex flex-col">
-          <h2 className="text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+        <div className="flex-1 flex flex-col bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-2xl p-4 rounded-3xl shadow-2xl text-orange-400 border border-orange-500/20 h-[70vh] lg:h-auto">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold mb-4 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             {chatType === "global" ? "Global Chat" : `Chat with ${selectedUser?.name}`}
           </h2>
           {error && (
             <p className="text-red-400 text-sm mb-2">{error}</p>
           )}
-          <div className="flex-1 h-96 overflow-y-auto bg-black/30 p-4 rounded-xl border border-orange-500/40 mb-4">
+          <div className="flex-1 overflow-y-auto mb-4 p-2 bg-black/30 rounded-xl border border-orange-500/40 flex flex-col-reverse">
             {messages.length === 0 ? (
-              <p className="text-orange-500/60 text-center">No messages yet. Start chatting!</p>
+              <p className="text-orange-500/60 text-center text-sm sm:text-base">No messages yet. Start chatting!</p>
             ) : (
-              messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`mb-2 text-sm flex ${
-                    msg.senderId === user.userId ? "justify-end" : "justify-start"
-                  }`}
-                >
+              <div className="flex flex-col">
+                {messages.slice().reverse().map((msg, index) => (
                   <div
-                    className={`max-w-xs p-2 rounded-xl ${
-                      msg.senderId === user.userId ? "bg-orange-600" : "bg-black/50"
+                    key={index}
+                    className={`mb-2 text-sm sm:text-base flex ${
+                      msg.senderId === user.userId ? "justify-end" : "justify-start"
                     }`}
                   >
-                    <span className="font-semibold text-orange-300">
-                      {msg.senderId === user.userId ? "You" : msg.senderName}:
-                    </span>
-                    <span className="ml-2">
-                      {msg.fileUrl ? (
-                        msg.fileType.startsWith("image/") ? (
-                          <img src={msg.fileUrl} alt="Attachment" className="max-w-full rounded" />
+                    <div
+                      className={`max-w-[70%] p-2 rounded-xl ${
+                        msg.senderId === user.userId ? "bg-orange-600" : "bg-black/50"
+                      }`}
+                    >
+                      <span className="font-semibold text-orange-300">
+                        {msg.senderId === user.userId ? "You" : msg.senderName}:
+                      </span>
+                      <span className="ml-2 break-words">
+                        {msg.fileUrl ? (
+                          msg.fileType.startsWith("image/") ? (
+                            <img src={msg.fileUrl} alt="Attachment" className="max-w-full rounded" />
+                          ) : (
+                            <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-300 underline">
+                              Download File
+                            </a>
+                          )
                         ) : (
-                          <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="text-orange-300 underline">
-                            Download File
-                          </a>
-                        )
-                      ) : (
-                        msg.message
-                      )}
-                      {msg.edited && <span className="text-xs text-orange-600 ml-1">(Edited)</span>}
-                    </span>
-                    <div className="text-orange-600 text-xs mt-1">
-                      {new Date(msg.timestamp).toLocaleTimeString()}
-                      {msg.read && msg.senderId === user.userId && (
-                        <FaCheckDouble className="inline ml-1 text-orange-400" />
+                          msg.message
+                        )}
+                        {msg.edited && <span className="text-xs text-orange-600 ml-1">(Edited)</span>}
+                      </span>
+                      <div className="text-orange-600 text-xs mt-1 flex items-center gap-1">
+                        {new Date(msg.timestamp).toLocaleTimeString()}
+                        {msg.read && msg.senderId === user.userId && (
+                          <FaCheckDouble className="text-orange-400" />
+                        )}
+                      </div>
+                      {msg.senderId === user.userId && (
+                        <div className="flex gap-2 mt-1">
+                          <FaEdit
+                            className="cursor-pointer hover:text-orange-300"
+                            onClick={() => editMessage(msg)}
+                          />
+                          <FaTrash
+                            className="cursor-pointer hover:text-red-400"
+                            onClick={() => deleteMessage(msg.messageId)}
+                          />
+                        </div>
                       )}
                     </div>
-                    {msg.senderId === user.userId && (
-                      <div className="flex gap-2 mt-1">
-                        <FaEdit
-                          className="cursor-pointer hover:text-orange-300"
-                          onClick={() => editMessage(msg)}
-                        />
-                        <FaTrash
-                          className="cursor-pointer hover:text-red-400"
-                          onClick={() => deleteMessage(msg.messageId)}
-                        />
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
           {typingUsers.size > 0 && (
-            <p className="text-orange-500/60 text-sm mb-2">
+            <p className="text-orange-500/60 text-xs sm:text-sm mb-2 truncate">
               {[...typingUsers]
                 .map((id) => onlineUsers.find((u) => u.userId === id)?.name || "Someone")
                 .join(", ")}{" "}
@@ -346,19 +348,19 @@ const Chat = () => {
                   ? "Type a message to everyone..."
                   : `Message ${selectedUser?.name}...`
               }
-              className="flex-1 p-3 bg-black/30 border border-orange-500/40 rounded-xl text-orange-400 placeholder-orange-500/60 focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+              className="flex-1 p-2 sm:p-3 bg-black/30 border border-orange-500/40 rounded-xl text-orange-400 placeholder-orange-500/60 focus:outline-none focus:ring-2 focus:ring-orange-400/50 text-sm sm:text-base"
             />
-            <label className="bg-orange-600 p-3 rounded-xl hover:bg-orange-700 cursor-pointer">
-              <FaFileUpload />
+            <label className="bg-orange-600 p-2 sm:p-3 rounded-xl hover:bg-orange-700 cursor-pointer">
+              <FaFileUpload className="text-sm sm:text-base" />
               <input type="file" className="hidden" onChange={handleFileChange} />
             </label>
             <motion.button
               type="submit"
-              className="bg-orange-600 text-white p-3 rounded-xl hover:bg-orange-700"
+              className="bg-orange-600 text-white p-2 sm:p-3 rounded-xl hover:bg-orange-700"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <FaPaperPlane />
+              <FaPaperPlane className="text-sm sm:text-base" />
             </motion.button>
           </form>
         </div>
