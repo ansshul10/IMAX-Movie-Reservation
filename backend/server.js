@@ -9,7 +9,7 @@ const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
-const nodemailer = require("nodemailer"); // For email sending
+const nodemailer = require("nodemailer");
 const Showtime = require("./models/showtime");
 const Message = require("./models/Message");
 const authRoutes = require("./routes/authRoutes");
@@ -39,6 +39,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Verify transporter configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("Email transporter verification failed:", error);
+  } else {
+    console.log("Email transporter is ready to send messages");
+  }
+});
+
 // Middleware
 app.use(express.json());
 app.use(cors());
@@ -64,7 +73,7 @@ const upload = multer({
 });
 
 // Track online users with status
-const users = new Map(); // { userId: { socketId, name, status, lastSeen } }
+const users = new Map();
 
 // Socket.IO Authentication Middleware
 io.use((socket, next) => {
@@ -79,10 +88,9 @@ io.use((socket, next) => {
   }
 });
 
-// Socket.IO Connection Handling
+// Socket.IO Connection Handling (unchanged)
 io.on("connection", (socket) => {
   console.log("User connected:", socket.user.userId);
-
   socket.on("join", (userId) => {
     users.set(userId, {
       socketId: socket.id,
@@ -93,23 +101,17 @@ io.on("connection", (socket) => {
     socket.join("globalChat");
     io.emit("onlineUsers", Array.from(users.values()));
   });
-
   socket.on("joinDirect", ({ userId, targetUserId }) => {
     const room = `room_${Math.min(userId, targetUserId)}_${Math.max(userId, targetUserId)}`;
     socket.join(room);
   });
-
-  socket.on("joinGlobal", (userId) => {
-    socket.join("globalChat");
-  });
-
+  socket.on("joinGlobal", (userId) => socket.join("globalChat"));
   socket.on("sendMessage", async (data) => {
     const senderId = data.senderId || socket.user.userId;
     if (!senderId) {
       console.error("No senderId provided and no authenticated user found");
       return socket.emit("error", { message: "Sender ID is required" });
     }
-
     const messageData = {
       senderId,
       senderName: data.senderName || socket.user.name,
@@ -121,7 +123,6 @@ io.on("connection", (socket) => {
       fileUrl: data.fileUrl || null,
       fileType: data.fileType || null,
     };
-
     try {
       const savedMessage = new Message(messageData);
       await savedMessage.save();
@@ -136,11 +137,7 @@ io.on("connection", (socket) => {
       socket.emit("error", { message: "Failed to save message" });
     }
   });
-
-  socket.on("typing", ({ userId, isTyping }) => {
-    io.emit("userTyping", { userId, isTyping });
-  });
-
+  socket.on("typing", ({ userId, isTyping }) => io.emit("userTyping", { userId, isTyping }));
   socket.on("markAsRead", async ({ messageId, recipientId }) => {
     try {
       await Message.updateOne({ messageId }, { read: true });
@@ -150,7 +147,6 @@ io.on("connection", (socket) => {
       console.error("Error marking message as read:", err);
     }
   });
-
   socket.on("editMessage", async ({ messageId, newMessage }) => {
     try {
       await Message.updateOne({ messageId }, { message: newMessage, edited: true });
@@ -165,7 +161,6 @@ io.on("connection", (socket) => {
       console.error("Error editing message:", err);
     }
   });
-
   socket.on("deleteMessage", async ({ messageId }) => {
     try {
       const msg = await Message.findOne({ messageId });
@@ -180,14 +175,12 @@ io.on("connection", (socket) => {
       console.error("Error deleting message:", err);
     }
   });
-
   socket.on("leave", (userId) => {
     if (users.has(userId)) {
       users.set(userId, { ...users.get(userId), status: "offline", lastSeen: new Date() });
       io.emit("onlineUsers", Array.from(users.values()));
     }
   });
-
   socket.on("disconnect", () => {
     if (users.has(socket.user.userId)) {
       users.set(socket.user.userId, {
@@ -258,6 +251,24 @@ app.get("/chat/history", async (req, res) => {
     res.status(200).json(messages);
   } catch (err) {
     res.status(500).json({ message: "Error fetching chat history", error: err.message });
+  }
+});
+
+// Test email route
+app.get("/test-email", async (req, res) => {
+  try {
+    const testMailOptions = {
+      from: `"IMAX Elite Booking" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER, // Send to yourself for testing
+      subject: "Test Email from IMAX Booking",
+      text: "This is a test email to verify email configuration.",
+    };
+    await transporter.sendMail(testMailOptions);
+    console.log("Test email sent successfully");
+    res.status(200).json({ message: "Test email sent successfully" });
+  } catch (error) {
+    console.error("Test email error:", error);
+    res.status(500).json({ message: "Failed to send test email", error: error.message });
   }
 });
 
