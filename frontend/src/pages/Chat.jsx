@@ -14,6 +14,7 @@ const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Set());
+  const [editingMessage, setEditingMessage] = useState(null); // Reintroduced
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
@@ -36,7 +37,7 @@ const Chat = () => {
     });
 
     socket.on("receiveMessage", (data) => {
-      if (!data.recipientId) { // Only global messages (no recipientId)
+      if (!data.recipientId) { // Only global messages
         setMessages((prev) => [...prev, data]);
         scrollToBottom();
         if (document.hidden && Notification.permission === "granted") {
@@ -120,7 +121,7 @@ const Chat = () => {
       message,
       timestamp: new Date(),
       messageId: Date.now().toString(),
-      recipientId: null, // Always global
+      recipientId: null, // Global chat only
     };
 
     socket.emit("sendMessage", messageData);
