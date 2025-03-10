@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaStar } from "react-icons/fa"; // Added missing import
 import seriesData from "../data/series";
 
 const SeriesList = () => {
+  // State for search and genre filtering
+  const [search, setSearch] = useState("");
+  const [genre, setGenre] = useState("All");
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -15,6 +19,15 @@ const SeriesList = () => {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
+
+  // Filtered series based on search and genre
+  const filteredSeries = useMemo(() => {
+    return seriesData.filter((series) => {
+      const isTitleMatch = series.title.toLowerCase().includes(search.toLowerCase());
+      const isGenreMatch = genre === "All" || series.genre.toLowerCase().includes(genre.toLowerCase());
+      return isTitleMatch && isGenreMatch;
+    });
+  }, [search, genre]);
 
   return (
     <motion.div
@@ -32,12 +45,57 @@ const SeriesList = () => {
         <span role="img" aria-label="TV"></span>
       </motion.h2>
 
+      {/* Search Bar */}
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <input
+          type="text"
+          placeholder="🔍 Search Series..."
+          className="w-full px-5 py-3 rounded-full bg-gray-800 text-orange-500 focus:ring-4 focus:ring-orange-400 outline-none shadow-lg transition-all"
+          onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search series"
+        />
+      </motion.div>
+
+      {/* Genre Filter */}
+      <motion.div
+        className="flex gap-4 mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <button
+          onClick={() => setGenre("All")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${genre === "All" ? "bg-orange-500 text-white" : "bg-gray-800 text-orange-500 hover:bg-orange-600"}`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setGenre("Drama")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${genre === "Drama" ? "bg-orange-500 text-white" : "bg-gray-800 text-orange-500 hover:bg-orange-600"}`}
+        >
+          Drama
+        </button>
+        <button
+          onClick={() => setGenre("Comedy")}
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${genre === "Comedy" ? "bg-orange-500 text-white" : "bg-gray-800 text-orange-500 hover:bg-orange-600"}`}
+        >
+          Comedy
+        </button>
+        {/* Add more genres here */}
+      </motion.div>
+
+      {/* Series Grid */}
       <AnimatePresence>
         <motion.div
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
           layout
         >
-          {seriesData.map((series, index) => (
+          {filteredSeries.map((series, index) => (
             <Link
               key={series.id}
               to={`/series/${series.id}`}
