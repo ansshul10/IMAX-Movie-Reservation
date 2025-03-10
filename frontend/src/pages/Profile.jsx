@@ -41,7 +41,6 @@ const Profile = () => {
   const [accountBalance, setAccountBalance] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [bookings, setBookings] = useState([]); // Add bookings state
   const fileInputRef = useRef(null);
 
   // Animation Variants
@@ -70,46 +69,6 @@ const Profile = () => {
       });
     }
   }, []);
-
-    // Fetch User's Bookings
-    useEffect(() => {
-      const fetchBookings = async () => {
-        try {
-          const token = localStorage.getItem("token");
-          const response = await axios.get("https://imax-movie-reservation.onrender.com/bookings/history", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setBookings(response.data);
-        } catch (error) {
-          console.error("Error fetching bookings:", error);
-          showMessage("Error fetching bookings!", "error");
-        }
-      };
-  
-      fetchBookings();
-    }, []);
-  
-    // Handle Cancel Booking
-    const handleCancelBooking = async (bookingId) => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.put(
-          `https://imax-movie-reservation.onrender.com/bookings/cancel-booking/${bookingId}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-  
-        // Update the bookings list
-        setBookings(bookings.map(booking =>
-          booking._id === bookingId ? { ...booking, status: "cancelled" } : booking
-        ));
-  
-        showMessage(response.data.message, "success");
-      } catch (error) {
-        console.error("Error cancelling booking:", error);
-        showMessage("Error cancelling booking!", "error");
-      }
-    };
 
   // Memoized Message Handler
   const showMessage = useCallback((text, type) => {
@@ -239,38 +198,6 @@ const Profile = () => {
         <div className="absolute w-72 h-72 bg-orange-500/20 rounded-full top-10 left-10 animate-pulse" />
         <div className="absolute w-96 h-96 bg-orange-700/20 rounded-full bottom-10 right-10 animate-pulse delay-700" />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPjxwYXR0ZXJuIGlkPSJhIiB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBwYXR0ZXJuVHJhbnNmb3JtPSJyb3RhdGUoNDUpIj48Y2lyY2xlIGN4PSIyLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-10" />
-      </div>
-      
-       {/* Bookings Section */}
-       <div className="mt-8 bg-black/30 p-4 sm:p-6 rounded-xl shadow-inner">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-orange-300">
-          <FaTicketAlt /> My Bookings
-        </h3>
-        {bookings.length === 0 ? (
-          <p className="text-orange-400">No bookings found.</p>
-        ) : (
-          <div className="space-y-4">
-            {bookings.map((booking) => (
-              <div key={booking._id} className="p-4 bg-black/50 rounded-xl border border-orange-800/50">
-                <p className="text-orange-200"><strong>Showtime:</strong> {booking.showtime}</p>
-                <p className="text-orange-200"><strong>Seats:</strong> {booking.numSeats}</p>
-                <p className="text-orange-200"><strong>Price:</strong> ${booking.price}</p>
-                <p className="text-orange-200"><strong>Status:</strong> {booking.status}</p>
-                {booking.status === "active" && (
-                  <motion.button
-                    variants={buttonVariants}
-                    whileHover="hover"
-                    whileTap="tap"
-                    onClick={() => handleCancelBooking(booking._id)}
-                    className="w-full bg-red-600/90 text-orange-200 p-2 rounded-xl mt-2 font-semibold shadow-md"
-                  >
-                    Cancel Ticket
-                  </motion.button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Notification */}
