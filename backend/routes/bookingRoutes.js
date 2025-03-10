@@ -3,19 +3,16 @@ const router = express.Router();
 const Booking = require("../models/Booking");
 const User = require("../models/User");
 
-// 🟢 Book a Ticket
 router.post("/book-ticket", async (req, res) => {
   try {
     const { user, name, email, age, seatType, numSeats, showtime, price } = req.body;
 
-    console.log("Received booking request:", req.body); // Debugging Log
+    console.log("Received booking request:", req.body); // ✅ Debugging Log
 
-    // Validate required fields
     if (!user || !name || !email || !age || !seatType || !numSeats || !showtime || !price) {
       return res.status(400).json({ message: "All fields are required!" });
     }
 
-    // Find the user
     const userData = await User.findById(user);
     if (!userData) {
       console.log("User not found:", user);
@@ -24,12 +21,11 @@ router.post("/book-ticket", async (req, res) => {
 
     console.log("User found:", userData);
 
-    // Check if the user has sufficient balance
     if (userData.balance < price) {
       return res.status(400).json({ message: "Insufficient balance! Please add more funds." });
     }
 
-    // Deduct balance
+    // 🟢 Deduct balance
     userData.balance -= price;
     await userData.save();
     console.log("Updated user balance:", userData.balance);
@@ -39,11 +35,11 @@ router.post("/book-ticket", async (req, res) => {
     await newBooking.save();
     console.log("Booking saved:", newBooking);
 
-    // Return bookingId in the response
+    // ✅ Return bookingId in the response
     res.status(201).json({
       message: "Booking successful!",
       balance: userData.balance,
-      bookingId: newBooking._id, // Send the booking ID back
+      bookingId: newBooking._id, // ✅ Send the booking ID back
     });
 
   } catch (error) {
@@ -51,6 +47,7 @@ router.post("/book-ticket", async (req, res) => {
     res.status(500).json({ message: "Error processing booking", error: error.message });
   }
 });
+
 
 // 🟢 Get Booking Details by ID (For Confirmation Page)
 router.get("/get-booking/:bookingId", async (req, res) => {
@@ -82,43 +79,6 @@ router.get("/history/:userId", async (req, res) => {
   } catch (error) {
     console.error("Error fetching booking history:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
-  }
-});
-
-// 🟢 Cancel a Booking and Process Refund
-router.put("/cancel-booking/:bookingId", async (req, res) => {
-  try {
-    const { bookingId } = req.params;
-
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
-    }
-
-    // Check if the booking is already cancelled
-    if (booking.status === "cancelled") {
-      return res.status(400).json({ message: "Booking is already cancelled" });
-    }
-
-    // Find the user
-    const user = await User.findById(booking.user);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Refund the amount to the user's balance
-    user.balance += booking.price;
-    await user.save();
-
-    // Update the booking status to "cancelled"
-    booking.status = "cancelled";
-    await booking.save();
-
-    res.status(200).json({ message: "Booking cancelled successfully", balance: user.balance });
-  } catch (error) {
-    console.error("Error cancelling booking:", error);
-    res.status(500).json({ message: "Error cancelling booking", error: error.message });
   }
 });
 
