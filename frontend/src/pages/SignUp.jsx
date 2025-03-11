@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Added Link for consistency
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { FaEnvelope, FaLock, FaUser, FaPhone, FaMoneyBillWave, FaKey, FaImage, FaArrowRight } from "react-icons/fa";
@@ -20,12 +20,16 @@ const SignUp = () => {
   const navigate = useNavigate();
 
   const handleImageChange = (e) => {
-    setUser({ ...user, profileImage: e.target.files[0] });
+    const file = e.target.files[0];
+    if (file) {
+      setUser({ ...user, profileImage: file });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validation
     if (user.password !== user.confirmPassword) {
       setMessage("Passwords do not match! 😕");
       return;
@@ -45,7 +49,7 @@ const SignUp = () => {
     formData.append("phone", user.phone);
     formData.append("password", user.password);
     formData.append("pin", user.pin);
-    formData.append("profileImage", user.profileImage);
+    if (user.profileImage) formData.append("profileImage", user.profileImage); // Only append if exists
     formData.append("balance", user.balance);
 
     try {
@@ -56,7 +60,7 @@ const SignUp = () => {
       localStorage.setItem("user", JSON.stringify(res.data.user));
       setMessage("Signup successful! Welcome aboard! 🚀");
       setTimeout(() => {
-        navigate("/"); // Redirect to home or chat
+        navigate("/"); // Redirect to home
         window.location.reload();
       }, 1000);
     } catch (err) {
@@ -99,9 +103,9 @@ const SignUp = () => {
         </p>
       </motion.div>
 
-      {/* Right Side - Sign Up Form */}
+      {/* Right Side - Sign Up Form (Scrollable) */}
       <motion.div
-        className="w-full max-w-md bg-white bg-opacity-5 backdrop-blur-xl p-6 rounded-2xl shadow-2xl text-orange-400 m-4 border border-orange-500/15 relative z-10"
+        className="w-full max-w-md bg-white bg-opacity-5 backdrop-blur-xl p-6 rounded-2xl shadow-2xl text-orange-400 m-4 border border-orange-500/15 relative z-10 max-h-[80vh] overflow-y-auto"
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.9, ease: "easeOut" }}
