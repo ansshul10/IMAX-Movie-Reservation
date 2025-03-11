@@ -8,7 +8,7 @@ const FormInput = memo(({ label, name, type = "text", value, onChange, readOnly 
   const inputRef = useRef(null);
 
   return (
-    <div className="relative">
+    <div className="relative transform transition-all hover:-translate-y-1 hover:shadow-xl">
       <label className="block text-sm font-medium text-orange-200 mb-1">{label}</label>
       <input
         ref={inputRef}
@@ -17,7 +17,7 @@ const FormInput = memo(({ label, name, type = "text", value, onChange, readOnly 
         value={value}
         onChange={onChange}
         readOnly={readOnly}
-        className={`w-full p-3 bg-black/50 border border-orange-700 rounded-xl text-orange-200 placeholder-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300 ${readOnly ? "opacity-60 cursor-not-allowed" : ""}`}
+        className={`w-full p-3 bg-gray-900 border border-orange-600 rounded-lg text-orange-200 placeholder-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 transform transition-all duration-300 ${readOnly ? "opacity-60 cursor-not-allowed" : "hover:shadow-orange-500/20"}`}
         autoComplete="off"
       />
     </div>
@@ -25,7 +25,6 @@ const FormInput = memo(({ label, name, type = "text", value, onChange, readOnly 
 });
 
 const Profile = () => {
-  // State Management
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     nickname: "",
@@ -43,18 +42,16 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Animation Variants
   const containerVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
   const buttonVariants = {
-    hover: { scale: 1.05, transition: { duration: 0.2 } },
+    hover: { scale: 1.05, rotateX: 5, transition: { duration: 0.2 } },
     tap: { scale: 0.95 },
   };
 
-  // Initialize User Data
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
     if (storedUser) {
@@ -70,19 +67,16 @@ const Profile = () => {
     }
   }, []);
 
-  // Memoized Message Handler
   const showMessage = useCallback((text, type) => {
     setMessage({ text, type });
     setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   }, []);
 
-  // Memoized Input Handler
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
-  // Handlers
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -191,15 +185,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-orange-950 text-orange-200 relative overflow-hidden">
-      {/* Enhanced Background */}
-      <div className="absolute inset-0">
-        <div className="absolute w-full h-full bg-gradient-to-tr from-orange-500/10 via-black/10 to-orange-700/10 animate-gradient-xy" />
-        <div className="absolute w-72 h-72 bg-orange-500/20 rounded-full top-10 left-10 animate-pulse" />
-        <div className="absolute w-96 h-96 bg-orange-700/20 rounded-full bottom-10 right-10 animate-pulse delay-700" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPjxwYXR0ZXJuIGlkPSJhIiB3aWR0aD0iNSIgaGVpZ2h0PSI1IiBwYXR0ZXJuVHJhbnNmb3JtPSJyb3RhdGUoNDUpIj48Y2lyY2xlIGN4PSIyLjUiIGN5PSIyLjUiIHI9IjAuNSIgZmlsbD0iI2ZmZiIgb3BhY2l0eT0iMC4xIi8+PC9wYXR0ZXJuPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-10" />
-      </div>
-
+    <div className="min-h-screen bg-black text-orange-200 relative overflow-hidden">
       {/* Notification */}
       <AnimatePresence>
         {message.text && (
@@ -219,9 +205,9 @@ const Profile = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 max-w-3xl mx-auto p-4 sm:p-6 md:p-8 mt-16 md:mt-20"
+        className="relative z-10 max-w-3xl mx-auto p-4 sm:p-6 md:p-8 mt-16 md:mt-20 perspective-1000"
       >
-        <div className="bg-black/70 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-orange-800/50">
+        <div className="bg-gray-900 p-6 sm:p-8 rounded-3xl shadow-2xl border border-orange-600/50 transform transition-all hover:-translate-y-2 hover:shadow-orange-500/30">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8 bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
             Profile Dashboard
           </h2>
@@ -230,7 +216,10 @@ const Profile = () => {
             <>
               {/* Profile Image */}
               <div className="flex justify-center mb-8">
-                <motion.div whileHover={{ scale: 1.05 }} className="relative">
+                <motion.div
+                  whileHover={{ scale: 1.05, rotateY: 10 }}
+                  className="relative transform transition-all hover:shadow-orange-500/50"
+                >
                   <input
                     type="file"
                     accept="image/*"
@@ -259,13 +248,13 @@ const Profile = () => {
                   <FormInput label="Name" name="name" value={user.name} onChange={handleInputChange} readOnly />
                   <FormInput label="Nickname" name="nickname" value={formData.nickname} onChange={handleInputChange} />
                   <FormInput label="Age" name="age" type="number" value={formData.age} onChange={handleInputChange} />
-                  <div className="relative">
+                  <div className="relative transform transition-all hover:-translate-y-1 hover:shadow-xl">
                     <label className="block text-sm font-medium text-orange-200 mb-1">Gender</label>
                     <select
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="w-full p-3 bg-black/50 border border-orange-700 rounded-xl text-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300"
+                      className="w-full p-3 bg-gray-900 border border-orange-600 rounded-lg text-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all duration-300 hover:shadow-orange-500/20"
                     >
                       <option value="">Select Gender</option>
                       <option value="Male">Male</option>
@@ -281,7 +270,7 @@ const Profile = () => {
                   whileTap="tap"
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-orange-500 to-orange-700 text-black p-3 rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg"
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-700 text-black p-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg transform transition-all hover:shadow-orange-500/40"
                 >
                   {isLoading ? (
                     <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -299,7 +288,7 @@ const Profile = () => {
                 whileHover="hover"
                 whileTap="tap"
                 onClick={() => setShowPasswordForm(!showPasswordForm)}
-                className="w-full bg-orange-800/80 text-orange-200 p-3 rounded-xl mt-6 font-semibold flex items-center justify-center gap-2 shadow-md"
+                className="w-full bg-orange-800/80 text-orange-200 p-3 rounded-lg mt-6 font-semibold flex items-center justify-center gap-2 shadow-md transform transition-all hover:shadow-orange-500/30"
               >
                 <FaLock /> Change Password
               </motion.button>
@@ -321,7 +310,7 @@ const Profile = () => {
                       whileTap="tap"
                       type="submit"
                       disabled={isLoading}
-                      className="w-full bg-green-600 text-orange-200 p-3 rounded-xl font-semibold shadow-md"
+                      className="w-full bg-green-600 text-orange-200 p-3 rounded-lg font-semibold shadow-md transform transition-all hover:shadow-green-500/30"
                     >
                       {isLoading ? "Updating..." : "Update Password"}
                     </motion.button>
@@ -330,7 +319,7 @@ const Profile = () => {
               </AnimatePresence>
 
               {/* Balance Section */}
-              <div className="mt-6 bg-black/30 p-4 sm:p-6 rounded-xl shadow-inner">
+              <div className="mt-6 bg-gray-900 p-4 sm:p-6 rounded-lg shadow-inner transform transition-all hover:-translate-y-1 hover:shadow-orange-500/20">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-orange-300">
                   <FaWallet /> Account Balance
                 </h3>
@@ -341,7 +330,7 @@ const Profile = () => {
                   whileTap="tap"
                   onClick={handleVerifyPin}
                   disabled={isLoading}
-                  className="w-full bg-orange-600 text-black p-3 rounded-xl mt-4 font-semibold shadow-md"
+                  className="w-full bg-orange-600 text-black p-3 rounded-lg mt-4 font-semibold shadow-md transform transition-all hover:shadow-orange-500/30"
                 >
                   {isLoading ? "Verifying..." : "Verify PIN"}
                 </motion.button>
@@ -362,7 +351,7 @@ const Profile = () => {
                 whileHover="hover"
                 whileTap="tap"
                 onClick={() => setShowDeleteModal(true)}
-                className="w-full bg-red-600/90 text-orange-200 p-3 rounded-xl mt-6 font-semibold flex items-center justify-center gap-2 shadow-md"
+                className="w-full bg-red-600/90 text-orange-200 p-3 rounded-lg mt-6 font-semibold flex items-center justify-center gap-2 shadow-md transform transition-all hover:shadow-red-500/30"
               >
                 <FaTrash /> Delete Account
               </motion.button>
@@ -381,9 +370,9 @@ const Profile = () => {
             className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-4"
           >
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-black/90 p-6 sm:p-8 rounded-2xl shadow-2xl border border-orange-800/50 max-w-md w-full"
+              initial={{ scale: 0.9, rotateX: -10 }}
+              animate={{ scale: 1, rotateX: 0 }}
+              className="bg-gray-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-orange-600/50 transform transition-all hover:shadow-orange-500/30"
             >
               <h3 className="text-xl sm:text-2xl font-bold mb-4 text-red-400">Confirm Deletion</h3>
               <p className="mb-6 text-orange-300 text-sm sm:text-base">This action is permanent. Proceed?</p>
@@ -394,7 +383,7 @@ const Profile = () => {
                   whileTap="tap"
                   onClick={handleDeleteAccount}
                   disabled={isLoading}
-                  className="flex-1 bg-red-600 text-orange-200 p-3 rounded-xl font-semibold shadow-md"
+                  className="flex-1 bg-red-600 text-orange-200 p-3 rounded-lg font-semibold shadow-md transform transition-all hover:shadow-red-500/30"
                 >
                   {isLoading ? "Deleting..." : "Delete"}
                 </motion.button>
@@ -403,7 +392,7 @@ const Profile = () => {
                   whileHover="hover"
                   whileTap="tap"
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 bg-orange-800 text-orange-200 p-3 rounded-xl font-semibold shadow-md"
+                  className="flex-1 bg-orange-800 text-orange-200 p-3 rounded-lg font-semibold shadow-md transform transition-all hover:shadow-orange-500/30"
                 >
                   Cancel
                 </motion.button>
@@ -414,7 +403,7 @@ const Profile = () => {
       </AnimatePresence>
 
       {/* Footer */}
-      <footer className="relative z-10 mt-12 py-6 bg-black/70 text-center text-orange-400">
+      <footer className="relative z-10 mt-12 py-6 bg-gray-900 text-center text-orange-400 shadow-inner">
         <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-8">
           {["Help", "Contact", "Terms"].map((item) => (
             <a
